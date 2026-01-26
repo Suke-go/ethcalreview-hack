@@ -11,6 +11,8 @@ backend/.env
 # Generated outputs
 backend/output/
 backend/sessions/
+output/
+sessions/
 
 # Sample documents (個人情報含む)
 sample/01-*.docx
@@ -28,6 +30,7 @@ sample/実験参加者リスト*.xlsx
 settings.json
 backend/settings.json
 backend/lab_defaults.json
+lab_defaults.json
 
 # Python
 __pycache__/
@@ -43,6 +46,14 @@ node_modules/
 frontend/node_modules/
 dist/
 frontend/dist/
+
+# Electron builds
+dist-electron/
+backend-dist/
+*.exe
+*.dmg
+*.AppImage
+*.snap
 
 # IDE
 .vscode/
@@ -60,3 +71,4 @@ npm-debug.log*
 
 # Knowledge base (Gemini)
 .gemini/
+

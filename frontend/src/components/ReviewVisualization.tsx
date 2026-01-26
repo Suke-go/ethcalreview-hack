@@ -165,28 +165,29 @@ const ReviewRoundDisplay: React.FC<{ round: RebuttalRound }> = ({ round }) => {
 
                         {expanded && (
                             <div className="suggestions-list">
-                                {round.suggestions.map((suggestion) => (
+                                {round.suggestions.map((suggestion, index) => (
                                     <div
-                                        key={suggestion.id}
+                                        key={index}
                                         className="suggestion-item"
                                     >
                                         <div className="suggestion-header">
                                             <span className="suggestion-type">
-                                                {suggestion.type === 'addition' && '➕ 追加'}
-                                                {suggestion.type === 'modification' && '✏️ 修正'}
-                                                {suggestion.type === 'deletion' && '🗑️ 削除'}
-                                                {suggestion.type === 'clarification' && '💡 説明'}
-                                            </span>
-                                            <span className="confidence-score">
-                                                信頼度: {(suggestion.confidence * 100).toFixed(0)}%
+                                                📍 {suggestion.field}
                                             </span>
                                         </div>
-                                        <p className="suggestion-text">
-                                            {suggestion.suggestedText}
-                                        </p>
-                                        {suggestion.rationale && (
+                                        <div className="suggestion-diff">
+                                            <div className="diff-before">
+                                                <span className="diff-label">現在:</span>
+                                                <span>{suggestion.originalValue || '（未記載）'}</span>
+                                            </div>
+                                            <div className="diff-after">
+                                                <span className="diff-label">提案:</span>
+                                                <span>{suggestion.suggestedValue}</span>
+                                            </div>
+                                        </div>
+                                        {suggestion.reason && (
                                             <p className="suggestion-rationale">
-                                                <em>{suggestion.rationale}</em>
+                                                <em>💬 {suggestion.reason}</em>
                                             </p>
                                         )}
                                     </div>

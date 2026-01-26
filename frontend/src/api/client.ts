@@ -17,14 +17,15 @@ import type {
 // APIのベースURL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// タイムアウト設定（書類生成はLLM呼び出しがあるため長め）
-const API_TIMEOUT = 600000; // 10分
+// タイムアウト設定
+const API_TIMEOUT_LONG = 600000;  // 10分（書類生成などLLM処理用）
+const API_TIMEOUT_SHORT = 5000;   // 5秒（設定取得・保存など軽量操作用）
 
 // Axiosインスタンスの作成
-const createApiClient = (apiKey?: string, provider: string = 'openai'): AxiosInstance => {
+const createApiClient = (apiKey?: string, provider: string = 'openai', timeout: number = API_TIMEOUT_LONG): AxiosInstance => {
     const client = axios.create({
         baseURL: API_BASE_URL,
-        timeout: API_TIMEOUT,
+        timeout: timeout,
         headers: {
             'Content-Type': 'application/json',
         },
@@ -68,23 +69,26 @@ const createApiClient = (apiKey?: string, provider: string = 'openai'): AxiosIns
     return client;
 };
 
-// デフォルトクライアント
+// デフォルトクライアント（長い処理用）
 let defaultClient = createApiClient();
+
+// 軽量操作用クライアント（短いタイムアウト）
+const fastClient = createApiClient(undefined, 'openai', API_TIMEOUT_SHORT);
 
 // APIキーとプロバイダー設定
 export const setApiKey = (apiKey: string, provider: string = 'openai'): void => {
     defaultClient = createApiClient(apiKey, provider);
 };
 
-// 設定API
+// 設定API（短いタイムアウトを使用）
 
 export const getSettings = async (): Promise<Settings> => {
-    const response = await defaultClient.get<Settings>('/api/settings');
+    const response = await fastClient.get<Settings>('/api/settings');
     return response.data;
 };
 
 export const updateSettings = async (settings: Partial<Settings>): Promise<Settings> => {
-    const response = await defaultClient.put<Settings>('/api/settings', settings);
+    const response = await fastClient.put<Settings>('/api/settings', settings);
     return response.data;
 };
 
@@ -175,10 +179,10 @@ export const requestReview = async (
     return response.data;
 };
 
-// ヘルスチェック
+// ヘルスチェック（短いタイムアウト）
 
 export const checkHealth = async (): Promise<{ status: string }> => {
-    const response = await defaultClient.get<{ status: string }>('/health');
+    const response = await fastClient.get<{ status: string }>('/health');
     return response.data;
 };
 
@@ -194,16 +198,16 @@ export const createSession = async (researchPlan: string): Promise<SessionDetail
     return response.data;
 };
 
-// セッション一覧取得
+// セッション一覧取得（短いタイムアウト）
 export const getSessions = async (status?: SessionStatus): Promise<SessionSummary[]> => {
     const params = status ? { status } : {};
-    const response = await defaultClient.get<SessionSummary[]>('/api/sessions', { params });
+    const response = await fastClient.get<SessionSummary[]>('/api/sessions', { params });
     return response.data;
 };
 
-// セッション詳細取得
+// セッション詳細取得（短いタイムアウト）
 export const getSession = async (sessionId: string): Promise<SessionDetail> => {
-    const response = await defaultClient.get<SessionDetail>(`/api/sessions/${sessionId}`);
+    const response = await fastClient.get<SessionDetail>(`/api/sessions/${sessionId}`);
     return response.data;
 };
 

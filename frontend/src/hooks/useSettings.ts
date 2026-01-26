@@ -5,6 +5,31 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Settings } from '../types';
 import { getSettings, updateSettings as apiUpdateSettings, setApiKey as setClientApiKey } from '../api/client';
 
+// Electron API 型定義
+interface ElectronAPI {
+    getSettings: () => Promise<Settings>;
+    saveSettings: (settings: Settings) => Promise<boolean>;
+    getLabDefaults: () => Promise<unknown>;
+    saveLabDefaults: (labDefaults: unknown) => Promise<boolean>;
+    openUserDataFolder: () => Promise<boolean>;
+    selectFile: (options: unknown) => Promise<{ canceled: boolean; filePaths: string[] }>;
+    getBackendStatus: () => Promise<string>;
+    restartBackend: () => Promise<boolean>;
+    getUserDataPath: () => Promise<string>;
+    getAppVersion: () => Promise<string>;
+}
+
+declare global {
+    interface Window {
+        electronAPI?: ElectronAPI;
+    }
+}
+
+// Electron環境かどうかを判定
+const isElectron = (): boolean => {
+    return typeof window !== 'undefined' && !!window.electronAPI;
+};
+
 // ローカルストレージキー
 const SETTINGS_KEY = 'ethicalReviewSettings';
 const API_KEY_STORAGE = 'geminiApiKey';
@@ -83,26 +108,35 @@ export const useSettings = (): UseSettingsReturn => {
             try {
                 setIsLoading(true);
 
-                // ローカルストレージから読み込み
+                // Electron環境の場合はElectron APIから読み込み
+                if (isElectron()) {
+                    try {
+                        const electronSettings = await window.electronAPI!.getSettings();
+                        if (electronSettings) {
+                            setSettings({ ...defaultSettings, ...electronSettings });
+                            // APIキーも設定
+                            if (electronSettings.llm?.apiKey) {
+                                setApiKeyState(electronSettings.llm.apiKey);
+                                setClientApiKey(electronSettings.llm.apiKey, electronSettings.llm.provider || 'openai');
+                            }
+                            console.log('Electron: 設定をファイルから読み込みました');
+                        }
+                    } catch (e) {
+                        console.error('Electron: 設定の読み込みに失敗しました', e);
+                    }
+                }
+
+                // ローカルストレージから読み込み（同期的、即座）
                 const savedSettings = localStorage.getItem(SETTINGS_KEY);
                 if (savedSettings) {
                     const parsed = JSON.parse(savedSettings);
-                    setSettings({ ...defaultSettings, ...parsed });
+                    setSettings(prev => ({ ...prev, ...parsed }));
                 }
 
                 // APIキーも読み込み
                 const savedApiKey = localStorage.getItem(API_KEY_STORAGE);
                 if (savedApiKey) {
                     setApiKeyState(savedApiKey);
-                }
-
-                // サーバーから最新設定を取得（可能であれば）
-                try {
-                    const serverSettings = await getSettings();
-                    setSettings((current) => ({ ...current, ...serverSettings }));
-                } catch {
-                    // サーバー未接続の場合はローカル設定を使用
-                    console.log('サーバーに接続できません。ローカル設定を使用します。');
                 }
 
                 setError(null);
@@ -112,6 +146,16 @@ export const useSettings = (): UseSettingsReturn => {
             } finally {
                 setIsLoading(false);
             }
+
+            // サーバーから最新設定を取得（バックグラウンド、UI表示後に実行）
+            getSettings()
+                .then((serverSettings) => {
+                    setSettings((current) => ({ ...current, ...serverSettings }));
+                    console.log('サーバーから設定を取得しました');
+                })
+                .catch(() => {
+                    console.log('サーバーに接続できません。ローカル設定を使用します。');
+                });
         };
 
         loadSettings();
@@ -123,7 +167,7 @@ export const useSettings = (): UseSettingsReturn => {
             const newSettings = { ...settings, ...updates };
             setSettings(newSettings);
 
-            // ローカルストレージに保存
+            // ローカルストレージに保存（同期的、即座に完了）
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
 
             // LLM設定が含まれていればAPIクライアントも更新
@@ -137,12 +181,17 @@ export const useSettings = (): UseSettingsReturn => {
                 }
             }
 
-            // サーバーにも保存（可能であれば）
-            try {
-                await apiUpdateSettings(updates);
-            } catch {
-                console.log('サーバーへの設定保存をスキップしました');
+            // Electron環境の場合はElectron APIで保存（非ブロッキング）
+            if (isElectron()) {
+                window.electronAPI!.saveSettings(newSettings)
+                    .then(() => console.log('Electron: 設定をファイルに保存しました'))
+                    .catch((e) => console.error('Electron: 設定の保存に失敗しました', e));
             }
+
+            // サーバーにも保存（非ブロッキング - 待たない）
+            apiUpdateSettings(updates)
+                .then(() => console.log('サーバーに設定を保存しました'))
+                .catch(() => console.log('サーバーへの設定保存をスキップしました'));
 
             setError(null);
         } catch (err) {

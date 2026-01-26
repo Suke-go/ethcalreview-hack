@@ -778,8 +778,8 @@ function App() {
                 // LLM設定が更新された場合、APIクライアントも更新
                 if (updates.llm?.apiKey) {
                   setApiKey(updates.llm.apiKey, updates.llm?.provider || settings.llm?.provider || 'openai');
-                  toast.success('設定を保存しました');
                 }
+                toast.success('設定を保存しました');
               }}
               onClose={() => setShowSettings(false)}
             />

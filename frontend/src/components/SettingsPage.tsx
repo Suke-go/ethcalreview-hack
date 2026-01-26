@@ -91,28 +91,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         <div className="form-grid">
                             <Input
                                 label="氏名"
-                                value={formData.principalInvestigator.name}
+                                value={formData.principalInvestigator?.name || ''}
                                 onChange={(e) => handleChange('principalInvestigator.name', e.target.value)}
                             />
                             <Input
                                 label="所属"
-                                value={formData.principalInvestigator.affiliation}
+                                value={formData.principalInvestigator?.affiliation || ''}
                                 onChange={(e) => handleChange('principalInvestigator.affiliation', e.target.value)}
                             />
                             <Input
                                 label="職名"
-                                value={formData.principalInvestigator.position}
+                                value={formData.principalInvestigator?.position || ''}
                                 onChange={(e) => handleChange('principalInvestigator.position', e.target.value)}
                             />
                             <Input
                                 label="メールアドレス"
                                 type="email"
-                                value={formData.principalInvestigator.email}
+                                value={formData.principalInvestigator?.email || ''}
                                 onChange={(e) => handleChange('principalInvestigator.email', e.target.value)}
                             />
                             <Input
                                 label="電話番号"
-                                value={formData.principalInvestigator.phone}
+                                value={formData.principalInvestigator?.phone || ''}
                                 onChange={(e) => handleChange('principalInvestigator.phone', e.target.value)}
                             />
                         </div>
@@ -145,8 +145,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         />
                         <Input
                             label="プロジェクト名"
-                            value={formData.budget.projectName}
-                            onChange={(e) => handleChange('budget.projectName', e.target.value)}
+                            value={formData.budget.project_name || ''}
+                            onChange={(e) => handleChange('budget.project_name', e.target.value)}
                         />
 
                         <div className="section-divider" />
@@ -156,13 +156,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <Input
                                 label="60分あたり基本金額（円）"
                                 type="number"
-                                value={formData.reward.baseAmountPer60Min}
+                                value={formData.reward?.baseAmountPer60Min || 1000}
                                 onChange={(e) => handleChange('reward.baseAmountPer60Min', parseInt(e.target.value))}
                             />
                             <Input
                                 label="丸め単位（円）"
                                 type="number"
-                                value={formData.reward.roundingUnit}
+                                value={formData.reward?.roundingUnit || 100}
                                 onChange={(e) => handleChange('reward.roundingUnit', parseInt(e.target.value))}
                             />
                         </div>

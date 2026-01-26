@@ -4,16 +4,17 @@
   "version": "1.0.0",
   "description": "倫理審査書類自動生成アプリ",
   "author": "Zempo Lab",
-  "main": "../electron/main.js",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron ../electron/main.js\"",
-    "electron:build": "npm run build && electron-builder",
-    "electron:pack": "electron-builder --dir"
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron ../electron/main.cjs\"",
+    "electron:prebuild": "xcopy /E /I /Y ..\\electron electron",
+    "electron:build": "npm run build && npm run electron:prebuild && electron-builder",
+    "electron:pack": "npm run electron:prebuild && electron-builder --dir"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -50,7 +51,7 @@
     },
     "files": [
       "dist/**/*",
-      "../electron/**/*"
+      "electron/**/*"
     ],
     "win": {
       "target": "nsis",
@@ -62,12 +63,10 @@
     },
     "extraResources": [
       {
-        "from": "../backend",
-        "to": "backend",
+        "from": "../backend-dist",
+        "to": "backend-dist",
         "filter": [
-          "**/*",
-          "!**/__pycache__/**",
-          "!.venv/**"
+          "**/*"
         ]
       }
     ]

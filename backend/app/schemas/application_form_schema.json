@@ -1,0 +1,795 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "研究倫理審査申請書フォームデータ",
+    "description": "LLMが埋める内容と選択肢を定義したスキーマ。構造は固定、内容のみ編集可能。",
+    "metadata": {
+        "form_name": "別記様式第１（第８条関係）",
+        "form_title": "研究倫理審査申請書",
+        "recipient": "システム情報系長　殿"
+    },
+    "header": {
+        "submission_date": {
+            "type": "date",
+            "label": "提出日",
+            "value": null,
+            "auto_fill": "current_date"
+        }
+    },
+    "applicant": {
+        "affiliation": {
+            "type": "text",
+            "label": "所属",
+            "value": null,
+            "source": "lab_defaults"
+        },
+        "position": {
+            "type": "text",
+            "label": "職名",
+            "value": null,
+            "source": "lab_defaults"
+        },
+        "name": {
+            "type": "text",
+            "label": "氏名",
+            "value": null,
+            "source": "lab_defaults"
+        }
+    },
+    "sections": {
+        "1_research_overview": {
+            "title": "１ 研究計画の概要",
+            "1_1_title": {
+                "label": "1.1 課題名",
+                "research_title": {
+                    "type": "text",
+                    "value": null,
+                    "source": "llm_analysis"
+                },
+                "category": {
+                    "type": "radio",
+                    "label": "カテゴリー",
+                    "options": [
+                        "人情報",
+                        "生命",
+                        "医療",
+                        "その他"
+                    ],
+                    "value": "人情報",
+                    "source": "user_input"
+                }
+            },
+            "1_2_period": {
+                "label": "1.2 研究等を行う期間",
+                "start": {
+                    "type": "text",
+                    "value": "研究倫理委員会承認後",
+                    "fixed": true
+                },
+                "end_year": {
+                    "type": "number",
+                    "value": null
+                },
+                "end_month": {
+                    "type": "number",
+                    "value": null
+                },
+                "end_day": {
+                    "type": "number",
+                    "value": null
+                }
+            },
+            "1_3_similar_application": {
+                "label": "1.3 類似申請",
+                "application_type": {
+                    "type": "radio",
+                    "options": [
+                        "新規申請",
+                        "変更申請"
+                    ],
+                    "value": "新規申請"
+                },
+                "similar_application_exists": {
+                    "type": "radio",
+                    "label": "類似申請の有無",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "similar_application_detail": {
+                    "type": "text",
+                    "value": "",
+                    "conditional": "similar_application_exists=有"
+                }
+            },
+            "1_4_collaborators": {
+                "label": "1.4 実施分担者",
+                "list": [
+                    {
+                        "affiliation": {
+                            "type": "text",
+                            "value": null
+                        },
+                        "position": {
+                            "type": "text",
+                            "value": null
+                        },
+                        "name": {
+                            "type": "text",
+                            "value": null
+                        }
+                    }
+                ]
+            },
+            "1_5_domain_head": {
+                "label": "1.5 関係組織の長",
+                "domain_name": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "domain_head_name": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                }
+            },
+            "1_6_facility": {
+                "label": "1.6 実施施設名",
+                "facility_type": {
+                    "type": "radio",
+                    "options": [
+                        "a. 筑波大学単独施設での研究",
+                        "b. 筑波大学を代表施設とする多施設共同研究",
+                        "c. 他施設を代表施設とする多施設共同研究",
+                        "d. 他施設の場合",
+                        "e. アンケート調査など複数施設の場合"
+                    ],
+                    "value": "a. 筑波大学単独施設での研究"
+                },
+                "facility_name": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "external_ethics_status": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "承認済み",
+                        "申請中",
+                        "申請予定",
+                        "不要"
+                    ],
+                    "value": [],
+                    "conditional": "facility_type=d.*"
+                }
+            },
+            "1_7_funding": {
+                "label": "1.7 費用の出所",
+                "funding_source": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "pi_name": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                }
+            },
+            "1_8_reward": {
+                "label": "1.8 謝金",
+                "has_reward": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "有"
+                },
+                "reward_type": {
+                    "type": "radio",
+                    "options": [
+                        "謝金単価表における被験者謝金単価（短期雇用と同じ額）を適用、またはそれ以下の単価で打ち切り",
+                        "被験者謝金単価を超える単価を設定（単価協議が別途必要であるため、実験開始まで時間を要する）"
+                    ],
+                    "value": "謝金単価表における被験者謝金単価（短期雇用と同じ額）を適用、またはそれ以下の単価で打ち切り",
+                    "conditional": "has_reward=有"
+                }
+            },
+            "1_9_conflict_of_interest": {
+                "label": "1.9 利益相反",
+                "has_conflict": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "conflict_type": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "受託研究として実施",
+                        "共同研究として実施",
+                        "企業等に業務委託を行う",
+                        "その他"
+                    ],
+                    "value": [],
+                    "conditional": "has_conflict=有"
+                },
+                "conflict_detail": {
+                    "type": "text",
+                    "value": "",
+                    "conditional": "has_conflict=有"
+                }
+            },
+            "1_10_ethics_guideline": {
+                "label": "1.10 参照するべき倫理指針",
+                "guideline": {
+                    "type": "text",
+                    "value": "人を対象とする生命科学・医療系研究に関する倫理指針",
+                    "fixed": true
+                }
+            },
+            "1_11_research_category": {
+                "label": "1.11 研究区分",
+                "category": {
+                    "type": "radio",
+                    "options": [
+                        "臨床研究ではない",
+                        "臨床試験(UMIN-CTR)に登録するべき臨床研究",
+                        "臨床研究で障害がある者や患者を対象とするべき研究"
+                    ],
+                    "value": "臨床研究ではない"
+                },
+                "intervention": {
+                    "type": "radio",
+                    "label": "介入",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "invasiveness": {
+                    "type": "radio",
+                    "label": "侵襲性",
+                    "options": [
+                        "軽微でない",
+                        "軽微",
+                        "ない"
+                    ],
+                    "value": "ない"
+                }
+            },
+            "1_12_compensation": {
+                "label": "1.12 研究対象者への健康被害の補償",
+                "has_compensation": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "有"
+                },
+                "compensation_type": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "国立大学法人総合損害保険（国大協保険）",
+                        "臨床研究保険",
+                        "その他"
+                    ],
+                    "value": [
+                        "国立大学法人総合損害保険（国大協保険）"
+                    ],
+                    "conditional": "has_compensation=有"
+                },
+                "no_compensation_reason": {
+                    "type": "text",
+                    "value": "",
+                    "conditional": "has_compensation=無"
+                }
+            }
+        },
+        "2_data_handling": {
+            "title": "２ 取得データに関する情報",
+            "2_1_data_types": {
+                "label": "2.1 データの種類",
+                "types": {
+                    "type": "text",
+                    "value": null,
+                    "source": "llm_analysis"
+                }
+            },
+            "2_2_data_collection_method": {
+                "label": "2.2 データの入手方法",
+                "method": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "新規に収集する",
+                        "既存のデータを用いる",
+                        "公開データベースのデータを用いる",
+                        "他の機関で取得されたデータ",
+                        "研究室で過去取得したデータ"
+                    ],
+                    "value": [
+                        "新規に収集する"
+                    ]
+                }
+            },
+            "2_3_personal_info": {
+                "label": "2.3 付加的に取得する個人情報の種類",
+                "info_types": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "氏名",
+                        "住所",
+                        "電話番号",
+                        "電子メール",
+                        "生年月日",
+                        "その他"
+                    ],
+                    "value": [
+                        "氏名",
+                        "電子メール"
+                    ]
+                }
+            },
+            "2_4_identifiable_records": {
+                "label": "2.4 個人が特定出来る音声・画像等の記録",
+                "has_records": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                }
+            },
+            "2_5_human_samples": {
+                "label": "2.5 血液・唾液などのヒト由来資料の取得",
+                "has_samples": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                }
+            },
+            "2_6_data_management": {
+                "label": "2.6 データの取り扱い",
+                "retention_period": {
+                    "type": "text",
+                    "value": "10年",
+                    "source": "lab_defaults"
+                },
+                "storage_location": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "manager": {
+                    "type": "text",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "management_method": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "disposal_method": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "lab_defaults"
+                },
+                "anonymization": {
+                    "type": "radio",
+                    "label": "データの匿名化",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "有"
+                },
+                "create_correspondence_table": {
+                    "type": "radio",
+                    "label": "対応表を作成する",
+                    "options": [
+                        "作成する",
+                        "しない"
+                    ],
+                    "value": "作成する",
+                    "conditional": "anonymization=有"
+                },
+                "correspondence_table_method": {
+                    "type": "radio",
+                    "options": [
+                        "外部と切り離されたコンピュータを使用して、外部記録媒体に保存し、鍵をかけて厳重に保管する",
+                        "紙媒体に記録し、鍵をかけて厳重に保管する"
+                    ],
+                    "value": "外部と切り離されたコンピュータを使用して、外部記録媒体に保存し、鍵をかけて厳重に保管する"
+                }
+            },
+            "2_7_data_disclosure": {
+                "label": "2.7 データの開示",
+                "to_subject": {
+                    "type": "radio",
+                    "label": "本人への開示",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "to_proxy": {
+                    "type": "radio",
+                    "label": "代諾者への開示",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                }
+            },
+            "2_8_publication": {
+                "label": "2.8 研究の公開",
+                "publication_venues": {
+                    "type": "checkbox_group",
+                    "options": [
+                        "学位論文",
+                        "学会発表",
+                        "学術論文",
+                        "無"
+                    ],
+                    "value": [
+                        "学位論文",
+                        "学会発表",
+                        "学術論文"
+                    ]
+                },
+                "subject_identifiable": {
+                    "type": "radio",
+                    "label": "対象者の特定",
+                    "options": [
+                        "できる",
+                        "できない"
+                    ],
+                    "value": "できない"
+                }
+            }
+        },
+        "3_participants": {
+            "title": "３ 実験対象者",
+            "3_1_participant_count": {
+                "label": "3.1 期間内に実施する対象者の人数の見積もり",
+                "count": {
+                    "type": "number",
+                    "value": null,
+                    "source": "llm_analysis"
+                },
+                "rationale": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate"
+                }
+            },
+            "3_2_gender": {
+                "label": "3.2 性別",
+                "gender": {
+                    "type": "radio",
+                    "options": [
+                        "男女",
+                        "男性のみ",
+                        "女性のみ"
+                    ],
+                    "value": "男女"
+                }
+            },
+            "3_3_age_range": {
+                "label": "3.3 年齢層",
+                "age_range": {
+                    "type": "text",
+                    "value": "18～65歳の成人",
+                    "source": "llm_analysis"
+                }
+            },
+            "3_4_criteria": {
+                "label": "3.4 選択基準・除外基準",
+                "inclusion_criteria": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate"
+                },
+                "exclusion_criteria": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate"
+                }
+            },
+            "3_5_recruitment": {
+                "label": "3.5 募集方法",
+                "method": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "lab_defaults"
+                }
+            }
+        },
+        "4_safety": {
+            "title": "４ 研究に伴う危害発生の可能性・安全性",
+            "4_1_new_device": {
+                "label": "4.1 新規開発デバイスの試用",
+                "has_new_device": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": null,
+                    "source": "llm_analysis"
+                },
+                "device_purpose": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "new_function": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "system_config": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "unintended_stimuli": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "avoidance_measures": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "attach_diagram": {
+                    "type": "checkbox",
+                    "label": "デバイスの説明を図解付きで添付",
+                    "value": false
+                },
+                "device_description": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                },
+                "attach_safety_doc": {
+                    "type": "checkbox",
+                    "label": "被験者が受ける最大の刺激が安全であることを裏付ける資料",
+                    "value": false
+                },
+                "safety_rationale": {
+                    "type": "textarea",
+                    "value": null,
+                    "source": "llm_generate",
+                    "conditional": "has_new_device=有"
+                }
+            },
+            "4_2_unavoidable_invasion": {
+                "label": "4.2 不可避的な侵襲",
+                "has_invasion": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "invasion_content": {
+                    "type": "textarea",
+                    "value": null,
+                    "conditional": "has_invasion=有"
+                }
+            },
+            "4_3_avoidable_invasion": {
+                "label": "4.3 回避可能な侵襲",
+                "has_invasion": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "無"
+                },
+                "invasion_content": {
+                    "type": "textarea",
+                    "value": null,
+                    "conditional": "has_invasion=有"
+                },
+                "avoidance_method": {
+                    "type": "textarea",
+                    "value": null,
+                    "conditional": "has_invasion=有"
+                },
+                "response_if_occurs": {
+                    "type": "textarea",
+                    "value": null,
+                    "conditional": "has_invasion=有"
+                }
+            },
+            "4_4_medical_cost": {
+                "label": "4.4 医療費が発生した場合の負担",
+                "has_coverage": {
+                    "type": "radio",
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "value": "有"
+                },
+                "coverage_method": {
+                    "type": "text",
+                    "value": "国大協保険",
+                    "source": "lab_defaults"
+                }
+            }
+        },
+        "5_informed_consent": {
+            "title": "５ インフォームドコンセント",
+            "5_1_consent_method": {
+                "label": "5.1 同意取得方法",
+                "method": {
+                    "type": "radio",
+                    "options": [
+                        "対象者から文章によるインフォームド・コンセントを得る",
+                        "代諾者による"
+                    ],
+                    "value": "対象者から文章によるインフォームド・コンセントを得る"
+                },
+                "subject_type": {
+                    "type": "radio",
+                    "options": [
+                        "同意能力のある成人",
+                        "未成年・同意能力のない者"
+                    ],
+                    "value": "同意能力のある成人"
+                }
+            },
+            "5_2_explanation_method": {
+                "label": "5.2 説明の方法",
+                "method": {
+                    "type": "radio",
+                    "options": [
+                        "文章を添えて口頭にて説明する",
+                        "文章による説明・口頭では説明しない",
+                        "その他"
+                    ],
+                    "value": "文章を添えて口頭にて説明する"
+                }
+            }
+        },
+        "6_social_survey": {
+            "title": "６ 社会調査の場合",
+            "is_applicable": {
+                "type": "boolean",
+                "value": false
+            },
+            "6_1_voluntary_response": {
+                "label": "6.1 回答の任意性が担保されているか",
+                "value": {
+                    "type": "radio",
+                    "options": [
+                        "いる",
+                        "いない"
+                    ],
+                    "value": "いる"
+                }
+            },
+            "6_2_sensitive_info": {
+                "label": "6.2 要配慮個人情報が含まれているか",
+                "value": {
+                    "type": "radio",
+                    "options": [
+                        "いる",
+                        "いない"
+                    ],
+                    "value": "いない"
+                }
+            },
+            "6_3_explanation_items": {
+                "label": "6.3 冒頭で必要項目が説明されているか",
+                "value": {
+                    "type": "radio",
+                    "options": [
+                        "いる",
+                        "いない"
+                    ],
+                    "value": "いる"
+                }
+            }
+        },
+        "7_attachments": {
+            "title": "７ 添付書類",
+            "checklist": {
+                "type": "checkbox_group",
+                "options": [
+                    {
+                        "id": "conflict_form",
+                        "label": "利益相反自己申告書",
+                        "conditional": "1_9_conflict_of_interest.has_conflict=有"
+                    },
+                    {
+                        "id": "implementation_plan",
+                        "label": "実施計画書"
+                    },
+                    {
+                        "id": "explanation_doc",
+                        "label": "研究対象者あるいは代諾者への研究概要、同意書等の説明文書"
+                    },
+                    {
+                        "id": "consent_form",
+                        "label": "研究対象者あるいは代諾者の同意書および同意撤回書"
+                    },
+                    {
+                        "id": "video_consent",
+                        "label": "研究対象者のビデオ画像の公開についての承諾書・承諾変更書"
+                    },
+                    {
+                        "id": "external_approval",
+                        "label": "研究代表施設における倫理委員会承認書のコピー"
+                    },
+                    {
+                        "id": "multi_site_plan",
+                        "label": "多施設共同研究実施計画書"
+                    },
+                    {
+                        "id": "role_distribution",
+                        "label": "共同研究施設の役割分担"
+                    },
+                    {
+                        "id": "other",
+                        "label": "その他"
+                    }
+                ],
+                "value": [
+                    "implementation_plan",
+                    "explanation_doc",
+                    "consent_form"
+                ]
+            },
+            "other_description": {
+                "type": "text",
+                "value": "",
+                "conditional": "checklist contains other"
+            }
+        },
+        "8_contact": {
+            "title": "８ 実施責任者の問い合わせ先",
+            "affiliation_position_name": {
+                "type": "text",
+                "value": null,
+                "source": "lab_defaults"
+            },
+            "phone": {
+                "type": "text",
+                "value": null,
+                "source": "lab_defaults"
+            },
+            "email": {
+                "type": "text",
+                "value": null,
+                "source": "lab_defaults"
+            }
+        }
+    }
+}

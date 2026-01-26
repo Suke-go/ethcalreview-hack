@@ -1,0 +1,1250 @@
+{
+  "01-1.研究倫理審査申請書(251207清水)_v2.docx": {
+    "filename": "01-1.研究倫理審査申請書(251207清水)_v2.docx",
+    "sections": [
+      {
+        "title": "１研究計画の概要",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "1.1　課題名\n\t粒状ジャミングバッグの剛性勾配による擬似傾斜知覚の基礎検討",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "（カテゴリー：　人情報　）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.2　研究等を行う期間",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "研究倫理委員会承認後　　　～　　　　　2028年　　3月　　31日",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.3　類似申請",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■新規申請",
+            "style": "Normal"
+          },
+          {
+            "text": "□変更申請",
+            "style": "Normal"
+          },
+          {
+            "text": "本学、あるいは他機関で今回の申請に類似した内容を申請し、審査されたこと",
+            "style": "Normal"
+          },
+          {
+            "text": "（あるいは審査中のもの）がある",
+            "style": "Normal"
+          },
+          {
+            "text": "■無",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.4　実施分担者",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "（　所　属　）筑波大学情報学群情報メディア創成学類",
+            "style": "Normal"
+          },
+          {
+            "text": "（　職名等　）学士課程2年\n　　　　（　氏　名　）清水 紘輔",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.5　関係組織の長",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "（域名・域長名）知能情報工学域・矢野　博明（先生） 　　　　　　　・",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.6　実施施設名",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■a. 筑波大学単独施設での研究",
+            "style": "Normal"
+          },
+          {
+            "text": "□. 筑波大学を代表施設とする多施設共同研究",
+            "style": "Normal"
+          },
+          {
+            "text": "（実施施設名：　3M211 　　　　　　　　　　　　　　　　　　　　）",
+            "style": "Normal"
+          },
+          {
+            "text": "□. 他施設を代表施設とする多施設共同研究",
+            "style": "Normal"
+          },
+          {
+            "text": "（代表施設名：",
+            "style": "Normal"
+          },
+          {
+            "text": "研究組織代表者氏名：　　　　　　　　　　　　　　　　　　　　　　　 ）",
+            "style": "Normal"
+          },
+          {
+            "text": "□b. 他施設の場合",
+            "style": "Normal"
+          },
+          {
+            "text": "他施設での倫理審査の状況（□承認済み、□申請中、□申請予定、□不要）",
+            "style": "Normal"
+          },
+          {
+            "text": "他施設の利用許可の状況（□承諾済み、□申請中、□申請予定）",
+            "style": "Normal"
+          },
+          {
+            "text": "□c. アンケート調査など複数施設の場合",
+            "style": "Normal"
+          },
+          {
+            "text": "□実施場所が大学外の場合，管理者の許可を得ていることを示す書類を添付",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.7　費用の出所",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "(教研)教研-重点-人材養成機能強化経費 (1111220000)",
+            "style": "Normal"
+          },
+          {
+            "text": "研究代表者：善甫 啓一",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.8　謝金（■有 □無）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■謝金単価表における被験者謝金単価（短期雇用と同じ額）を適用、またはそれ以下の単価で打ち切り",
+            "style": "Normal"
+          },
+          {
+            "text": "□被験者謝金単価を超える単価を設定（単価協議が別途必要であるため、実験開始まで時間を要する）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.9　利益相反（□有 ■無）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "□受託研究として実施：受託元機関名（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "□共同研究として実施：共同研究機関（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "□企業等に業務委託を行う：",
+            "style": "Normal"
+          },
+          {
+            "text": "委託先機関（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "委託内容　（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "委託先の監督方法（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "□その他",
+            "style": "Normal"
+          },
+          {
+            "text": "上記における団体との経済的利益関係（□有 □無）",
+            "style": "Normal"
+          },
+          {
+            "text": "ありの場合：関係性の詳細（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "研究経過・研究対象者に影響を及ぼさないための方策：（記入）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.10 参照するべき倫理指針・研究の区分（記入）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "人を対象とする生命科学・医療系研究に関する倫理指針",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.11 研究区分",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■臨床研究ではない",
+            "style": "Normal"
+          },
+          {
+            "text": "□臨床試験(UMIN-CTR)に登録するべき臨床研究",
+            "style": "Normal"
+          },
+          {
+            "text": "□臨床研究で障害がある者や患者を対象とするべき研究（医療ではなく科学や工学を目的とする）",
+            "style": "Normal"
+          },
+          {
+            "text": "介入（□有 ■無）",
+            "style": "Normal"
+          },
+          {
+            "text": "侵襲性（□軽微でない、□軽微、■ない）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "1.12　研究対象者への健康被害の補償（国大協保険、臨床研究保険等の保証保険）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■有",
+            "style": "Normal"
+          },
+          {
+            "text": "■国立大学法人総合損害保険（国大協保険）",
+            "style": "Normal"
+          },
+          {
+            "text": "□臨床研究保険",
+            "style": "Normal"
+          },
+          {
+            "text": "□その他（   　　　　　　　　　　　　　　　　　　　　　　　　　　　　）",
+            "style": "Normal"
+          },
+          {
+            "text": "□無 (理由：　　  　　                                                  )",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "2　取得データに関する情報",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "データの種類",
+            "style": "List Paragraph"
+          }
+        ]
+      },
+      {
+        "title": "2.2 データの入手方法",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■新規に収集する",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "□既存のデータを用いる",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "□公開データベースのデータを用いる",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "詳細（リンクなど特定が可能な情報提供）：",
+            "style": "Normal"
+          },
+          {
+            "text": "個人情報の特定　□可能・□不可能",
+            "style": "Normal"
+          },
+          {
+            "text": "□他の機関で取得されたデータ（診療データを含む）",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "詳細：",
+            "style": "Normal"
+          },
+          {
+            "text": "承認：□機関からの承認を得ている、□承認を得ていない",
+            "style": "Normal"
+          },
+          {
+            "text": "個人情報の特定：□可能・□不可能",
+            "style": "Normal"
+          },
+          {
+            "text": "□研究室で過去取得したデータ",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "詳細（倫理承認番号）　（記入）",
+            "style": "List Paragraph"
+          }
+        ]
+      },
+      {
+        "title": "2.3  付加的に取得する個人情報の種類",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■氏名",
+            "style": "Normal"
+          },
+          {
+            "text": "□住所",
+            "style": "Normal"
+          },
+          {
+            "text": "□電話番号",
+            "style": "Normal"
+          },
+          {
+            "text": "■電子メール",
+            "style": "Normal"
+          },
+          {
+            "text": "□生年月日",
+            "style": "Normal"
+          },
+          {
+            "text": "□その他（記入）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "2.4 個人が特定出来る音声・画像等の記録　□有 ■無",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "2.5 血液・唾液などのヒト由来資料の取得（□有■無）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "具体名(記入)",
+            "style": "Normal"
+          },
+          {
+            "text": "採取の方法（記入）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "2.6 データの取り扱い",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "取得したデータ等の保管期間：10年",
+            "style": "Normal"
+          },
+          {
+            "text": "管理場所　：研究室(3M211)にて管理されたノートパソコン",
+            "style": "Normal"
+          },
+          {
+            "text": "管理責任者：善甫 啓一",
+            "style": "Normal"
+          },
+          {
+            "text": "管理方法　：ノートパソコンの使用を関係者のみとし、結果の解析はネットに接続されない状態で行う。また、暗号化およびパスワード保護を用いることによりデータを保護する。",
+            "style": "Normal"
+          },
+          {
+            "text": "処分方法　：研究対象者からの実験に関するデータの破棄が申請された場合は直ちに研究対象者のデータを破棄する。また、研究成果発表から10年が経過した場合、データの保存しているSSDを初期化し、データの復元...",
+            "style": "Normal"
+          },
+          {
+            "text": "データの匿名化（■有□無）",
+            "style": "Normal"
+          },
+          {
+            "text": "有：匿名化する場合：対応表を■作成する□しない",
+            "style": "Normal"
+          },
+          {
+            "text": "無：しない場合：理由（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "対応表の管理方法",
+            "style": "Normal"
+          },
+          {
+            "text": "■外部と切り離されたコンピュータを使用して、外部記録媒体に保存し、鍵をかけて厳重に保管する",
+            "style": "Normal"
+          },
+          {
+            "text": "□紙媒体に記録し、鍵をかけて厳重に保管する",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "2.7データの開示",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "本人への開示（□有■無）",
+            "style": "Normal"
+          },
+          {
+            "text": "代諾者への開示（□有■無）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "2.8 研究の公開（有：■学位論文、■学会発表、■学術論文 ,□無）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "対象者の特定（□できる、■できない）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "3. 実験対象者",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "3.1 期間内に実施する対象者の人数の見積もり：　　　３０名",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "妥当性の根拠",
+            "style": "Normal"
+          },
+          {
+            "text": "本実験では、粒状ジャミングバッグによって生成される剛性勾配が主観的傾斜感覚に与える影響を定量化することが目的だ。このため、複数の実験条件（左右差、前後差、差のない状態）を設定し、これらの条件間での傾斜...",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "3.2 性別　男女",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "3.3 年齢層　　18～65歳の成人",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "3.4 選択基準　18～65歳の成人",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "除外基準　日本語で日常会話レベルのコミュニケーションができない人",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "3.5 募集方法",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "実験参加者の募集は、筑波大学内の掲示板やWeb掲示板への案内文書の掲示、および口頭での案内によって行う。参加は個人の自由意志に基づくものとし、募集者が参加希望者の成績評価等を行う立場にないことを明確に...",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "4. 研究に伴う危害発生の可能性・安全性　　（記入）",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "4.1 新規開発デバイスの試用が □有 ■無",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "ある場合　（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "デバイスを使用する目的：　（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "粒状ジャミングバッグを用いて、剛性勾配を生じさせ、擬似的な傾斜感覚を参加者に提示するため。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "開発した新規機能：（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "真空圧を操作することで、ジャミングバッグの剛性を動的に変化させる機能を持つデバイス。これにより、身体感覚に影響を与え、仰臥位における姿勢知覚を模擬的に変化させる。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "システムの構成：（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "ジャミングバッグ、真空圧制御システム、圧力調整用のバルブとインラインフィルターから構成され、バッグを減圧し、圧力を調整することで異なる剛性条件を設定する。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "機器が発生する意図しない刺激と回避策:（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "ジャミングバッグによる局所的な圧力が高くなることにより、不快感や痛みを感じる可能性がある。特に、仙骨や肩甲骨など、体重が集中する部位で圧力が高まりやすい。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "回避策",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "圧力調整と監視: 各ジャミングバッグの圧力は、実験開始前に適切に設定し、実験中は常に圧力が設定範囲内であることを確認する。圧力調整には細心の注意を払い、予期せぬ圧力上昇を防ぐために、真空圧力計を用いて...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "緊急停止: 参加者が不快感を訴えた場合や予期せぬ問題が発生した場合、圧力を即時に解除できるする。また、参加者には「ストップ」コールによって、すぐに実験を中止できるよう配慮する。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "□デバイスの説明を図解付きで添付",
+            "style": "Normal"
+          },
+          {
+            "text": "本研究で用いるデバイスは、四つの粒状ジャミングバッグと、それらを独立に減圧して剛性を変化させる真空圧制御・固定系から構成される。目的は、支持面の空間的な剛性勾配（左右・前後の硬さの差）を生成し、仰臥位...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "各バッグにはウレタンチューブを接続し、インラインフィルタおよび圧力計（真空ゲージ）を介して真空ポンプに接続する構成である。実",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "験条件に応じて各バッグを所定の真空圧（例：0〜−40 kPa）まで減圧したのち、各バッグのバルブを閉じて圧力を固定する。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "試行中はポンプを停止し、参加者が受ける刺激を静的な支持面特性（剛性分布）に限定する。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "減圧前は粒子が流動し柔らかい支持面となる。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "減圧後は粒子間摩擦が増大し、バッグ全体が高剛性の支持面として振る舞う（粒状ジャミングの基本原理である）。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "□被験者が受ける最大の刺激が安全であることを裏付ける資料",
+            "style": "Normal"
+          },
+          {
+            "text": "本研究で参加者が受ける刺激は、(i) 支持面の局所剛性差に起因する体圧分布の変化、および (ii) 姿勢が傾いたように感じる主観的錯覚である。刺激は静的であり、回転・加速度などの前庭器官を直接駆動する...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "「最大刺激条件」の定義（本研究における上限）最大刺激条件は、以下を同時に満たす条件として定義する。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "真空圧の設定範囲において、剛性が最大となる減圧（例：−40 kPa付近）を用いる。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "四バッグ間の真空圧差（左右差または前後差）が最大となる条件を用いる。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "参加者の体格差によって局所圧が上がりやすい支持点（肩甲骨・仙骨周辺）での接触が成立している状態である。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "真空圧（陰圧）の作用範囲に関する安全性",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "本研究で用いる陰圧は、バッグ内部の空気を減圧して粒子をジャミングさせるための内部圧であり、皮膚に対して創傷被覆材のように陰圧を直接印加するものではない。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "したがって、参加者に直接作用する主因は陰圧ではなく、体重支持による接触圧（インタフェース圧）である。 粒状ジャミングは一般に真空圧差によって剛性が上がる可変剛性機構として整理されている。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "さらに、仮に配管の緩み等で漏れが生じた場合、バッグは減圧を維持できず柔らかい状態へ戻る方向に変化するため、フェイルセーフとして「硬くなり過ぎる」事故形態になりにくい構造である。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "本研究の手順では、各条件での安静保持は10〜15秒程度であり、条件間で降りて休憩を挟む設計であるため、同一部位に高圧が長時間連続して加わる状況を回避している。したがって、褥瘡リスクの主要因である「長時...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "以上より、本研究の最大刺激は「体重支持に伴う接触圧分布の変化」と「短時間の姿勢錯覚」であり、(i) 刺激が静的であること、(ii) 試行時間が短く休憩を挟むこと、(iii) 中止合図で即時停止できるこ...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "[1]Allen, V., Ryan, D.W. and Murray, A. (1993), POTENTIAL FOR BED SORES DUE TO HIGH PRESSURES : INFL...",
+            "style": "List Paragraph"
+          }
+        ]
+      },
+      {
+        "title": "4.2 不可避的な侵襲の(□有■無)",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "有の場合　侵襲の内容",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "4.3 回避可能な侵襲の(□有■無)",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "有の場合",
+            "style": "Normal"
+          },
+          {
+            "text": "内容",
+            "style": "Normal"
+          },
+          {
+            "text": "回避する方法",
+            "style": "Normal"
+          },
+          {
+            "text": "発生した場合の対応",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "4.4 医療費が発生した場合の負担の■有□無",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "方法　国大協保険",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "5 インフォームドコンセント",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "5.1 　■対象者から文章によるインフォームド・コンセントを得る",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "対象者の属性：　（記入）",
+            "style": "Normal"
+          },
+          {
+            "text": "■同意能力のある成人",
+            "style": "Normal"
+          },
+          {
+            "text": "□未成年・同意能力のない者（詳細：）",
+            "style": "Normal"
+          },
+          {
+            "text": "□代諾者によるから文章によるインフォームド・コンセントを得る",
+            "style": "Normal"
+          },
+          {
+            "text": "□親権者もしくは未成年後見人",
+            "style": "Normal"
+          },
+          {
+            "text": "□その他",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "5.2 説明の方法",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "■文章を添えて口頭にて説明する",
+            "style": "Normal"
+          },
+          {
+            "text": "□文章による説明・口頭では説明しない",
+            "style": "Normal"
+          },
+          {
+            "text": "□その他",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "6．社会調査の場合",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "本研究は社会調査に該当しない",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "6.1 回答の任意性が担保されているか？ (■いる□いない)",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "6.2 設問には，要配慮個人情報（本人の人種，思想信条にかかわるものや，本人のプライバシーに関わるもの（病歴，障害の有無，いじめられた経験，性的な嗜好性等）が含まれているか？(□いる■いない)",
+        "style": "Normal",
+        "content": []
+      },
+      {
+        "title": "6.3　調査に際して，冒頭の説明文等において，以下の項目が説明されているか (■いる□いない)",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "調査の趣旨，調査内容，回答の任意性，調査対象者の選定根拠，調査対象者の保護（匿名性が十分確保されること），調査からの離脱の自由，設問ごとの非回答の可否，調査に非協力の場合に調査対象者が被る可能性のある...",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "7.　添付書類（添付されているものにチェックをいれること）",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "□利益相反自己申告書（利益相反が有る場合のみ提出すること）",
+            "style": "Normal"
+          },
+          {
+            "text": "■実施計画書（様式は任意）",
+            "style": "Normal"
+          },
+          {
+            "text": "■研究対象者あるいは代諾者への研究概要、同意書等の説明文書",
+            "style": "Normal"
+          },
+          {
+            "text": "■研究対象者あるいは代諾者の同意書および同意撤回書",
+            "style": "Normal"
+          },
+          {
+            "text": "□研究対象者のビデオ画像の公開についての承諾書・承諾変更書",
+            "style": "Normal"
+          },
+          {
+            "text": "□研究代表施設における倫理委員会承認書のコピー（多施設共同研究であり､筑波大学以外の施設が代表施設の場合のみ）",
+            "style": "Normal"
+          },
+          {
+            "text": "□多施設共同研究実施計画書（多施設共同研究であり、全体の研究実施計画書が　　存在する場合のみ）",
+            "style": "Normal"
+          },
+          {
+            "text": "□共同研究施設の役割分担（図など）",
+            "style": "Normal"
+          },
+          {
+            "text": "■その他（　アンケート内容　）",
+            "style": "Normal"
+          }
+        ]
+      },
+      {
+        "title": "8.　実施責任者の問い合わせ先",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "所属・職名・氏名 システム情報系・准教授・善甫 啓一",
+            "style": "Normal"
+          },
+          {
+            "text": "内線番号\t5338",
+            "style": "Normal"
+          },
+          {
+            "text": "メールアドレス zempo@iit.tsukuba.ac.jp",
+            "style": "Normal"
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "placeholders": [
+      {
+        "context": "□変更申請",
+        "type": "checkbox"
+      },
+      {
+        "context": "□. 筑波大学を代表施設とする多施設共同研究",
+        "type": "checkbox"
+      },
+      {
+        "context": "□. 他施設を代表施設とする多施設共同研究",
+        "type": "checkbox"
+      },
+      {
+        "context": "□b. 他施設の場合",
+        "type": "checkbox"
+      },
+      {
+        "context": "他施設での倫理審査の状況（□承認済み、□申請中、□申請予定、□不要）",
+        "type": "checkbox"
+      },
+      {
+        "context": "他施設の利用許可の状況（□承諾済み、□申請中、□申請予定）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□c. アンケート調査など複数施設の場合",
+        "type": "checkbox"
+      },
+      {
+        "context": "□実施場所が大学外の場合，管理者の許可を得ていることを示す書類を添付",
+        "type": "checkbox"
+      },
+      {
+        "context": "1.8　謝金（■有 □無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□被験者謝金単価を超える単価を設定（単価協議が別途必要であるため、実験開始まで時間を要する）",
+        "type": "checkbox"
+      },
+      {
+        "context": "1.9　利益相反（□有 ■無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□受託研究として実施：受託元機関名（記入）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□共同研究として実施：共同研究機関（記入）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□企業等に業務委託を行う：",
+        "type": "checkbox"
+      },
+      {
+        "context": "□その他",
+        "type": "checkbox"
+      },
+      {
+        "context": "上記における団体との経済的利益関係（□有 □無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□臨床試験(UMIN-CTR)に登録するべき臨床研究",
+        "type": "checkbox"
+      },
+      {
+        "context": "□臨床研究で障害がある者や患者を対象とするべき研究（医療ではなく科学や工学を目的とする）",
+        "type": "checkbox"
+      },
+      {
+        "context": "介入（□有 ■無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "侵襲性（□軽微でない、□軽微、■ない）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□臨床研究保険",
+        "type": "checkbox"
+      },
+      {
+        "context": "□その他（   　　　　　　　　　　　　　　　　　　　　　　　　　　　　）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□無 (理由：　　  　　                                                  )",
+        "type": "checkbox"
+      },
+      {
+        "context": "□既存のデータを用いる",
+        "type": "checkbox"
+      },
+      {
+        "context": "□公開データベースのデータを用いる",
+        "type": "checkbox"
+      },
+      {
+        "context": "個人情報の特定　□可能・□不可能",
+        "type": "checkbox"
+      },
+      {
+        "context": "□他の機関で取得されたデータ（診療データを含む）",
+        "type": "checkbox"
+      },
+      {
+        "context": "承認：□機関からの承認を得ている、□承認を得ていない",
+        "type": "checkbox"
+      },
+      {
+        "context": "個人情報の特定：□可能・□不可能",
+        "type": "checkbox"
+      },
+      {
+        "context": "□研究室で過去取得したデータ",
+        "type": "checkbox"
+      },
+      {
+        "context": "□住所",
+        "type": "checkbox"
+      },
+      {
+        "context": "□電話番号",
+        "type": "checkbox"
+      },
+      {
+        "context": "□生年月日",
+        "type": "checkbox"
+      },
+      {
+        "context": "□その他（記入）",
+        "type": "checkbox"
+      },
+      {
+        "context": "2.4 個人が特定出来る音声・画像等の記録　□有 ■無",
+        "type": "checkbox"
+      },
+      {
+        "context": "2.5 血液・唾液などのヒト由来資料の取得（□有■無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "データの匿名化（■有□無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "有：匿名化する場合：対応表を■作成する□しない",
+        "type": "checkbox"
+      },
+      {
+        "context": "□紙媒体に記録し、鍵をかけて厳重に保管する",
+        "type": "checkbox"
+      },
+      {
+        "context": "本人への開示（□有■無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "代諾者への開示（□有■無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "2.8 研究の公開（有：■学位論文、■学会発表、■学術論文 ,□無）",
+        "type": "checkbox"
+      },
+      {
+        "context": "対象者の特定（□できる、■できない）",
+        "type": "checkbox"
+      },
+      {
+        "context": "4.1 新規開発デバイスの試用が □有 ■無",
+        "type": "checkbox"
+      },
+      {
+        "context": "□デバイスの説明を図解付きで添付",
+        "type": "checkbox"
+      },
+      {
+        "context": "□被験者が受ける最大の刺激が安全であることを裏付ける資料",
+        "type": "checkbox"
+      },
+      {
+        "context": "4.2 不可避的な侵襲の(□有■無)",
+        "type": "checkbox"
+      },
+      {
+        "context": "4.3 回避可能な侵襲の(□有■無)",
+        "type": "checkbox"
+      },
+      {
+        "context": "4.4 医療費が発生した場合の負担の■有□無",
+        "type": "checkbox"
+      },
+      {
+        "context": "□未成年・同意能力のない者（詳細：）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□代諾者によるから文章によるインフォームド・コンセントを得る",
+        "type": "checkbox"
+      },
+      {
+        "context": "□親権者もしくは未成年後見人",
+        "type": "checkbox"
+      },
+      {
+        "context": "□その他",
+        "type": "checkbox"
+      },
+      {
+        "context": "□文章による説明・口頭では説明しない",
+        "type": "checkbox"
+      },
+      {
+        "context": "□その他",
+        "type": "checkbox"
+      },
+      {
+        "context": "6.1 回答の任意性が担保されているか？ (■いる□いない)",
+        "type": "checkbox"
+      },
+      {
+        "context": "6.2 設問には，要配慮個人情報（本人の人種，思想信条にかかわるものや，本人のプライバシーに関わるもの（病歴，障害の有無，いじめられた経験，性的な嗜好性等）が含",
+        "type": "checkbox"
+      },
+      {
+        "context": "6.3　調査に際して，冒頭の説明文等において，以下の項目が説明されているか (■いる□いない)",
+        "type": "checkbox"
+      },
+      {
+        "context": "□利益相反自己申告書（利益相反が有る場合のみ提出すること）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□研究対象者のビデオ画像の公開についての承諾書・承諾変更書",
+        "type": "checkbox"
+      },
+      {
+        "context": "□研究代表施設における倫理委員会承認書のコピー（多施設共同研究であり､筑波大学以外の施設が代表施設の場合のみ）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□多施設共同研究実施計画書（多施設共同研究であり、全体の研究実施計画書が　　存在する場合のみ）",
+        "type": "checkbox"
+      },
+      {
+        "context": "□共同研究施設の役割分担（図など）",
+        "type": "checkbox"
+      }
+    ]
+  },
+  "01-1.研究倫理審査申請書参考資料(251207清水).docx": {
+    "filename": "01-1.研究倫理審査申請書参考資料(251207清水).docx",
+    "sections": [],
+    "tables": [],
+    "placeholders": [
+      {
+        "context": "□デバイスの説明を図解付きで添付",
+        "type": "checkbox"
+      },
+      {
+        "context": "□被験者が受ける最大の刺激が安全であることを裏付ける資料",
+        "type": "checkbox"
+      }
+    ]
+  },
+  "01-2_実施計画書 (251207_清水)_v3.docx": {
+    "filename": "01-2_実施計画書 (251207_清水)_v3.docx",
+    "sections": [],
+    "tables": [],
+    "placeholders": []
+  },
+  "03_同意書（shimizu）_v3.docx": {
+    "filename": "03_同意書（shimizu）_v3.docx",
+    "sections": [
+      {
+        "title": "③　個人情報の保護について",
+        "style": "Normal",
+        "content": [
+          {
+            "text": "(1) データの匿名化について\n 連結可能匿名化によるデータの匿名化を行います。研究対象者の氏名・電子メールアドレスは謝礼送付および連絡のために取得し，研究データ（回答用紙の結果や条件情報）とは分離し...",
+            "style": "Normal"
+          },
+          {
+            "text": "(2) データの管理方法\n 研究データは研究室（3M211）にて管理されたノートパソコンで保管し，実施責任者および実施分担者のみが取り扱います。結果の解析はネットに接続されない状態で行い，暗号化および...",
+            "style": "Normal"
+          },
+          {
+            "text": "研究対象者は本人の自由意思によって，同意書署名の日から90日後までであれば任意の時期において実験の取りやめおよびデータの破棄を申し出ることができます。破棄の申し出があった際には，直ちに破棄を行います。",
+            "style": "Normal"
+          },
+          {
+            "text": "(3) 研究参加の任意性\n 研究への参加は任意であり，研究へ参加しないことで不利益が生じることはありません。実験の途中であっても不利益なく参加を取りやめることができます。また，同意書署名の日から90日...",
+            "style": "Normal"
+          }
+        ]
+      }
+    ],
+    "tables": [
+      {
+        "rows": 1,
+        "columns": 1,
+        "headers": [
+          "同　　意　　書\n\n　　筑波大学システム情報系長　殿\n\n私は、「課題名：粒状ジャミングバッグの剛性勾配"
+        ],
+        "sample_data": [
+          [
+            "同　　意　　書\n\n　　筑波大学システム情報系長　殿\n\n私は、"
+          ]
+        ]
+      }
+    ],
+    "placeholders": []
+  },
+  "04_同意撤回書.ver1 1.docx": {
+    "filename": "04_同意撤回書.ver1 1.docx",
+    "sections": [],
+    "tables": [
+      {
+        "rows": 1,
+        "columns": 1,
+        "headers": [
+          "同　　意　　撤　　回　　書\n\n　　筑波大学システム情報系長　殿\n\n　　私は、「音響編集システムにおけ"
+        ],
+        "sample_data": [
+          [
+            "同　　意　　撤　　回　　書\n\n　　筑波大学システム情報系長　"
+          ]
+        ]
+      }
+    ],
+    "placeholders": []
+  },
+  "【添付資料B】実験参加者募集案内文(shimizu).docx": {
+    "filename": "【添付資料B】実験参加者募集案内文(shimizu).docx",
+    "sections": [
+      {
+        "title": "18歳以上で視力および聴力に問題のない方",
+        "style": "List Paragraph",
+        "content": [
+          {
+            "text": "聴覚・平衡感覚・皮膚感覚に重大な問題がない",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "仰臥位（あおむけ）で横になることが可能な方",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "以下のいずれにも該当しない方",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "めまい・乗り物酔いの既往が強い",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "長時間の仰臥位で痛みが生じる、または腰痛・頸部痛が悪化する可能性がある",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "皮膚疾患・褥瘡（床ずれ）のリスクが高い",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "妊娠中である",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "自由意思に基づいて同意書に署名し、協力していただける方",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "[実験の内容]",
+            "style": "Normal"
+          },
+          {
+            "text": "実験では、以下の手順で「硬さが変化するバッグ」の上での感覚を評価していただきます。",
+            "style": "Normal"
+          },
+          {
+            "text": "靴や厚手の上着などを外し、装置の上に仰臥位（あおむけ）で横になっていただきます。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "視覚的な影響をなくすためアイマスクを装着し、10〜15秒ほど安静にします。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "その後、「現在どの方向にどれほど傾いていると感じるか」を、回答用紙に線を描いて回答していただきます。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "これを条件を変えながら、休憩を挟みつつ合計6回程度繰り返します。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "[謝礼] \n実験終了時に、謝金としてAmazonギフトカード（Eメールタイプ）800円分をお支払いいたします。",
+            "style": "Normal"
+          },
+          {
+            "text": "[ご注意]",
+            "style": "Normal"
+          },
+          {
+            "text": "本実験を実施する前に十分な説明を行いますが、実際には水平であるにもかかわらず傾いているように感じることによる違和感や、仰臥位保持による多少の疲れ、背中の圧迫感を感じる可能性があります。その際は、いつで...",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "説明と準備を含め、所要時間は45〜50分程度です。",
+            "style": "List Paragraph"
+          },
+          {
+            "text": "ご興味のある方は、スタッフにお声がけください。",
+            "style": "Normal"
+          }
+        ]
+      }
+    ],
+    "tables": [],
+    "placeholders": []
+  }
+}

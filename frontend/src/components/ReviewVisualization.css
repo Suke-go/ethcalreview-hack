@@ -1,0 +1,319 @@
+/* frontend/src/components/ReviewVisualization.css */
+/* マルチエージェント レビュー可視化スタイル */
+
+.review-visualization {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 80vh;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.review-visualization.loading,
+.review-visualization.error {
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #4a90e2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* ヘッダー */
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.review-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.close-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* タイムライン */
+.review-timeline {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background: #f8f9fa;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #999;
+    font-style: italic;
+}
+
+/* ラウンド表示 */
+.review-round {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.review-round:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.round-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.round-number {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #667eea;
+}
+
+.round-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.round-status {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* メッセージ */
+.message {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.agent-icon {
+    font-size: 1.5rem;
+}
+
+.agent-name {
+    font-size: 1rem;
+    color: #495057;
+}
+
+.expand-button {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid #dee2e6;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.expand-button:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+}
+
+.message-content {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* 査読者メッセージ */
+.reviewer-message {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.feedback-text {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* AIメッセージ */
+.ai-message {
+    background: #e7f3ff;
+    border-left: 4px solid #4a90e2;
+}
+
+.suggestion-summary {
+    margin: 0;
+    font-weight: 600;
+    color: #0056b3;
+}
+
+/* 提案リスト */
+.suggestions-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.suggestion-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.suggestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-type {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.confidence-score {
+    font-size: 0.85rem;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.suggestion-text {
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.suggestion-rationale {
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* 研究者メッセージ */
+.researcher-message {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+.response-text {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* フッター */
+.review-footer {
+    padding: 1rem 2rem;
+    background: white;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rounds-count {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .review-header {
+        padding: 1rem;
+    }
+
+    .review-timeline {
+        padding: 1rem;
+    }
+
+    .review-round {
+        padding: 1rem;
+    }
+
+    .round-header {
+        flex-wrap: wrap;
+    }
+
+    .message {
+        padding: 0.75rem 1rem;
+    }
+}

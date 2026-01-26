@@ -1,0 +1,177 @@
+.progress-stepper {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-5);
+    margin: var(--spacing-4) 0;
+    font-family: 'Segoe UI', 'Meiryo', sans-serif;
+    box-shadow: var(--shadow-lg);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.connecting {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    animation: pulse 1.5s infinite;
+}
+
+.status-badge.streaming {
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+    animation: pulse 1.5s infinite;
+}
+
+.status-badge.done {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.status-badge.error {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.progress-events {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.progress-event {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    transition: all 0.3s ease;
+}
+
+.progress-event.running {
+    border-left: 3px solid var(--color-primary);
+    background: rgba(37, 99, 235, 0.08);
+}
+
+.progress-event.completed {
+    opacity: 0.9;
+}
+
+.progress-event.error {
+    border-left: 3px solid var(--color-error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.event-icon {
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(100, 108, 255, 0.3);
+    border-top-color: #646cff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.event-label {
+    flex-shrink: 0;
+    min-width: 160px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.event-message {
+    flex: 1;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.event-detail {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.badge {
+    padding: 2px 8px;
+    background: var(--color-secondary-bg);
+    color: var(--color-secondary);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.progress-error {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.error-icon {
+    font-size: 20px;
+}
+
+.error-message {
+    color: #f44336;
+    font-size: 14px;
+}
+
+/* 追加のアニメーション */
+.progress-event {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

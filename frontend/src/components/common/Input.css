@@ -1,0 +1,148 @@
+/* frontend/src/components/common/Input.css */
+
+.input-wrapper {
+    margin-bottom: var(--spacing-4);
+}
+
+.input-label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-2);
+}
+
+.input-required {
+    color: var(--color-error);
+    margin-left: var(--spacing-1);
+}
+
+/* 入力フィールドコンテナ */
+.input-container {
+    display: flex;
+    align-items: stretch;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-container:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.input-container.input-error {
+    border-color: var(--color-error);
+}
+
+.input-container.input-error:focus-within {
+    box-shadow: 0 0 0 3px var(--color-error-bg);
+}
+
+/* 入力フィールド */
+.input-field {
+    flex: 1;
+    padding: var(--spacing-3) var(--spacing-4);
+    border: none;
+    background: transparent;
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.input-field::placeholder {
+    color: var(--text-muted);
+}
+
+/* アドオン */
+.input-addon {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-3);
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.input-addon-left {
+    border-right: 1px solid var(--border-color);
+}
+
+.input-addon-right {
+    border-left: 1px solid var(--border-color);
+}
+
+/* テキストエリア */
+.textarea-field {
+    width: 100%;
+    min-height: 120px;
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    resize: vertical;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.textarea-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.textarea-field.input-error {
+    border-color: var(--color-error);
+}
+
+.textarea-field.input-error:focus {
+    box-shadow: 0 0 0 3px var(--color-error-bg);
+}
+
+.textarea-field::placeholder {
+    color: var(--text-muted);
+}
+
+/* セレクト */
+.select-field {
+    width: 100%;
+    padding: var(--spacing-3) var(--spacing-4);
+    padding-right: var(--spacing-10);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-3) center;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.select-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.select-field.input-error {
+    border-color: var(--color-error);
+}
+
+/* ヘルプ・エラーテキスト */
+.input-help-text {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    margin-top: var(--spacing-1);
+}
+
+.input-error-text {
+    font-size: var(--text-sm);
+    color: var(--color-error);
+    margin-top: var(--spacing-1);
+}

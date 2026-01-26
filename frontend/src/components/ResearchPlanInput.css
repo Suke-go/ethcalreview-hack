@@ -1,0 +1,168 @@
+/* frontend/src/components/ResearchPlanInput.css */
+
+.research-plan-input {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-8);
+    box-shadow: var(--shadow-md);
+}
+
+.input-header {
+    margin-bottom: var(--spacing-6);
+}
+
+.input-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-2);
+}
+
+.input-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ドロップゾーン */
+.drop-zone {
+    position: relative;
+    margin-bottom: var(--spacing-4);
+}
+
+.drop-zone.dragging .plan-textarea {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-bg);
+}
+
+.drop-zone.dragging .drop-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.plan-textarea {
+    min-height: 300px;
+    font-size: var(--text-base);
+    line-height: 1.7;
+}
+
+.drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2);
+    background: rgba(37, 99, 235, 0.95);
+    border-radius: var(--radius-md);
+    color: #ffffff;
+    font-weight: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+}
+
+.drop-icon {
+    font-size: 3rem;
+}
+
+/* エラー */
+.input-error-alert {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-4);
+    background-color: var(--color-error-bg);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    margin-bottom: var(--spacing-4);
+}
+
+/* アクション */
+.input-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-4);
+}
+
+.upload-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+}
+
+.upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-4);
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.upload-btn:hover {
+    background-color: var(--color-gray-200);
+}
+
+.upload-hint {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+/* ヒント */
+.input-tips {
+    margin-top: var(--spacing-6);
+    padding: var(--spacing-4);
+    background: linear-gradient(135deg, var(--color-primary-bg) 0%, rgba(124, 58, 237, 0.1) 100%);
+    border-radius: var(--radius-lg);
+}
+
+.input-tips h3 {
+    font-size: var(--text-base);
+    font-weight: 600;
+    margin-bottom: var(--spacing-2);
+}
+
+.input-tips ul {
+    list-style: none;
+    padding: 0;
+}
+
+.input-tips li {
+    position: relative;
+    padding-left: var(--spacing-5);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.8;
+}
+
+.input-tips li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+    .research-plan-input {
+        padding: var(--spacing-5);
+    }
+
+    .input-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .upload-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

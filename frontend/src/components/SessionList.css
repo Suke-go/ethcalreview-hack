@@ -1,0 +1,268 @@
+/* frontend/src/components/SessionList.css */
+
+.session-list {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.session-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.session-list-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary, #1f2937);
+}
+
+
+/* フィルターボタン */
+.session-list-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary, #f3f4f6);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: var(--bg-tertiary, #e5e7eb);
+}
+
+.filter-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* ローディング */
+.session-list-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--border-color, #e5e7eb);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* エラー */
+.session-list-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+}
+
+.session-list-error button {
+    padding: 0.5rem 1rem;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* 空状態 */
+.session-list-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.session-list-empty p {
+    margin-bottom: 1rem;
+}
+
+/* セッションアイテム */
+.session-list-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.session-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-6);
+    padding: var(--spacing-4);
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: var(--radius-2xl, 1rem);
+    min-height: 140px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.session-item:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+}
+
+.session-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.session-item-title {
+    font-weight: 600;
+    color: var(--text-primary, #1f2937);
+    line-height: 1.4;
+}
+
+.session-item-meta {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.session-status-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.session-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-1);
+    padding: 0.35rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: var(--radius-full, 999px);
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary, #1f2937);
+    text-transform: none;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.session-status-detail {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.session-status.status-in_progress {
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+}
+
+.session-status.status-submitted {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.session-status.status-rebuttal {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.session-status.status-completed {
+    border-color: rgba(107, 114, 128, 0.4);
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+}
+
+.session-item-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.session-item-date {
+    font-size: 0.75rem;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.session-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    padding: 0.375rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s ease;
+}
+
+.btn-icon:hover {
+    background: var(--bg-secondary, #f3f4f6);
+}
+
+.btn-icon.btn-danger:hover {
+    background: #fef2f2;
+}
+
+@media (max-width: 768px) {
+    .session-item {
+        flex-direction: column;
+        gap: var(--spacing-4);
+    }
+
+    .session-item-main {
+        width: 100%;
+    }
+
+    .session-item-side {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-left: 0;
+        margin-top: var(--spacing-3);
+    }
+
+    .session-item-actions {
+        justify-content: flex-end;
+        width: auto;
+    }
+}

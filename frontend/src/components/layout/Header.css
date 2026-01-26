@@ -1,0 +1,131 @@
+/* frontend/src/components/layout/Header.css */
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-gray-800) 100%);
+    box-shadow: var(--shadow-lg);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-4) var(--spacing-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+}
+
+.header-logo {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.header-title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.header-title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.header-subtitle {
+    font-size: var(--text-sm);
+    color: var(--color-gray-400);
+    margin-top: 2px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    border-radius: var(--radius-full);
+}
+
+.status-connected {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.status-disconnected {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.header-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-2) var(--spacing-4);
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+@media (max-width: 640px) {
+    .header-content {
+        flex-direction: column;
+        gap: var(--spacing-4);
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

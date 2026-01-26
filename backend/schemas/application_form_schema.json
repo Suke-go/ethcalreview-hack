@@ -1,0 +1,606 @@
+{
+    "template_name": "研究倫理審査申請書",
+    "sections": [
+        {
+            "id": "1",
+            "title": "研究計画の概要",
+            "fields": [
+                {
+                    "id": "1.1",
+                    "name": "課題名",
+                    "type": "text",
+                    "required": true,
+                    "ai_generated": true
+                },
+                {
+                    "id": "1.1.cat",
+                    "name": "カテゴリー",
+                    "type": "text",
+                    "required": true,
+                    "options": [
+                        "人情報",
+                        "医学",
+                        "心理",
+                        "工学"
+                    ]
+                },
+                {
+                    "id": "1.2",
+                    "name": "研究期間",
+                    "type": "date_range",
+                    "required": true,
+                    "default_start": "承認後"
+                },
+                {
+                    "id": "1.3",
+                    "name": "類似申請",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "新規申請",
+                        "変更申請"
+                    ]
+                },
+                {
+                    "id": "1.4",
+                    "name": "実施分担者",
+                    "type": "list",
+                    "required": false,
+                    "fields": [
+                        "所属",
+                        "職名",
+                        "氏名"
+                    ]
+                },
+                {
+                    "id": "1.5",
+                    "name": "関係組織の長",
+                    "type": "text",
+                    "required": true,
+                    "default_from_settings": true
+                },
+                {
+                    "id": "1.6",
+                    "name": "実施施設名",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "筑波大学単独施設での研究",
+                        "筑波大学を代表施設とする多施設共同研究",
+                        "他施設を代表施設とする多施設共同研究",
+                        "アンケート調査など複数施設の場合"
+                    ]
+                },
+                {
+                    "id": "1.7",
+                    "name": "費用の出所",
+                    "type": "text",
+                    "required": true,
+                    "ai_suggested": true
+                },
+                {
+                    "id": "1.8",
+                    "name": "謝金",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "sub_options": [
+                        "謝金単価表における被験者謝金単価を適用、またはそれ以下",
+                        "被験者謝金単価を超える単価を設定"
+                    ]
+                },
+                {
+                    "id": "1.9",
+                    "name": "利益相反",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "sub_options": [
+                        "受託研究として実施",
+                        "共同研究として実施",
+                        "企業等に業務委託を行う",
+                        "その他"
+                    ]
+                },
+                {
+                    "id": "1.10",
+                    "name": "参照する倫理指針",
+                    "type": "text",
+                    "required": true,
+                    "default": "人を対象とする生命科学・医療系研究に関する倫理指針"
+                },
+                {
+                    "id": "1.11",
+                    "name": "研究区分",
+                    "type": "multi_select",
+                    "required": true,
+                    "options": [
+                        "臨床研究ではない",
+                        "臨床試験に登録するべき臨床研究",
+                        "障害者や患者を対象とする研究"
+                    ],
+                    "additional_fields": [
+                        {
+                            "name": "介入",
+                            "type": "radio",
+                            "options": [
+                                "有",
+                                "無"
+                            ]
+                        },
+                        {
+                            "name": "侵襲性",
+                            "type": "radio",
+                            "options": [
+                                "軽微でない",
+                                "軽微",
+                                "ない"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "1.12",
+                    "name": "健康被害の補償",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "国立大学法人総合損害保険（国大協保険）",
+                        "臨床研究保険",
+                        "その他",
+                        "無"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "2",
+            "title": "取得データに関する情報",
+            "fields": [
+                {
+                    "id": "2.2",
+                    "name": "データの入手方法",
+                    "type": "checkbox",
+                    "required": true,
+                    "options": [
+                        "新規に収集する",
+                        "既存のデータを用いる",
+                        "公開データベースのデータを用いる",
+                        "他の機関で取得されたデータ",
+                        "研究室で過去取得したデータ"
+                    ]
+                },
+                {
+                    "id": "2.3",
+                    "name": "付加的に取得する個人情報",
+                    "type": "checkbox",
+                    "required": false,
+                    "options": [
+                        "氏名",
+                        "住所",
+                        "電話番号",
+                        "電子メール",
+                        "生年月日",
+                        "その他"
+                    ]
+                },
+                {
+                    "id": "2.4",
+                    "name": "個人特定可能な記録",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ]
+                },
+                {
+                    "id": "2.5",
+                    "name": "ヒト由来資料の取得",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ]
+                },
+                {
+                    "id": "2.6",
+                    "name": "データの取り扱い",
+                    "type": "group",
+                    "required": true,
+                    "fields": [
+                        {
+                            "name": "保管期間",
+                            "type": "text",
+                            "default": "10年"
+                        },
+                        {
+                            "name": "管理場所",
+                            "type": "text"
+                        },
+                        {
+                            "name": "管理責任者",
+                            "type": "text",
+                            "default_from_settings": true
+                        },
+                        {
+                            "name": "管理方法",
+                            "type": "textarea",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "処分方法",
+                            "type": "textarea",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "匿名化",
+                            "type": "radio",
+                            "options": [
+                                "有（対応表作成）",
+                                "有（対応表なし）",
+                                "無"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "2.7",
+                    "name": "データの開示",
+                    "type": "group",
+                    "fields": [
+                        {
+                            "name": "本人への開示",
+                            "type": "radio",
+                            "options": [
+                                "有",
+                                "無"
+                            ]
+                        },
+                        {
+                            "name": "代諾者への開示",
+                            "type": "radio",
+                            "options": [
+                                "有",
+                                "無"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "2.8",
+                    "name": "研究の公開",
+                    "type": "checkbox",
+                    "options": [
+                        "学位論文",
+                        "学会発表",
+                        "学術論文",
+                        "無"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "3",
+            "title": "実験対象者",
+            "fields": [
+                {
+                    "id": "3.1",
+                    "name": "人数の見積もり",
+                    "type": "number",
+                    "required": true,
+                    "ai_suggested": true
+                },
+                {
+                    "id": "3.1.reason",
+                    "name": "妥当性の根拠",
+                    "type": "textarea",
+                    "required": true,
+                    "ai_generated": true
+                },
+                {
+                    "id": "3.2",
+                    "name": "性別",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "男",
+                        "女",
+                        "男女"
+                    ]
+                },
+                {
+                    "id": "3.3",
+                    "name": "年齢層",
+                    "type": "text",
+                    "required": true,
+                    "default": "18〜65歳の成人"
+                },
+                {
+                    "id": "3.4",
+                    "name": "選択基準",
+                    "type": "textarea",
+                    "required": true,
+                    "ai_generated": true
+                },
+                {
+                    "id": "3.4.exclude",
+                    "name": "除外基準",
+                    "type": "textarea",
+                    "required": true,
+                    "ai_generated": true
+                },
+                {
+                    "id": "3.5",
+                    "name": "募集方法",
+                    "type": "textarea",
+                    "required": true,
+                    "ai_generated": true
+                }
+            ]
+        },
+        {
+            "id": "4",
+            "title": "研究に伴う危害発生の可能性・安全性",
+            "fields": [
+                {
+                    "id": "4.1",
+                    "name": "新規開発デバイスの試用",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "conditional_fields": [
+                        {
+                            "name": "使用目的",
+                            "type": "textarea",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "開発した新規機能",
+                            "type": "textarea",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "システムの構成",
+                            "type": "textarea",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "意図しない刺激と回避策",
+                            "type": "textarea",
+                            "ai_generated": true,
+                            "strict_review": true
+                        }
+                    ]
+                },
+                {
+                    "id": "4.2",
+                    "name": "不可避的な侵襲",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "strict_review": true
+                },
+                {
+                    "id": "4.3",
+                    "name": "回避可能な侵襲",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ],
+                    "strict_review": true
+                },
+                {
+                    "id": "4.4",
+                    "name": "医療費発生時の負担",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "有",
+                        "無"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "5",
+            "title": "インフォームドコンセント",
+            "fields": [
+                {
+                    "id": "5.1",
+                    "name": "同意の取得方法",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "対象者から文章によるインフォームド・コンセントを得る",
+                        "代諾者から文章によるインフォームド・コンセントを得る"
+                    ]
+                },
+                {
+                    "id": "5.1.attr",
+                    "name": "対象者の属性",
+                    "type": "radio",
+                    "options": [
+                        "同意能力のある成人",
+                        "未成年・同意能力のない者"
+                    ]
+                },
+                {
+                    "id": "5.2",
+                    "name": "説明の方法",
+                    "type": "radio",
+                    "required": true,
+                    "options": [
+                        "文章を添えて口頭にて説明する",
+                        "文章による説明・口頭では説明しない",
+                        "その他"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "6",
+            "title": "社会調査の場合",
+            "conditional": true,
+            "fields": [
+                {
+                    "id": "6.0",
+                    "name": "社会調査に該当",
+                    "type": "radio",
+                    "options": [
+                        "該当する",
+                        "該当しない"
+                    ]
+                },
+                {
+                    "id": "6.1",
+                    "name": "回答の任意性",
+                    "type": "radio",
+                    "options": [
+                        "担保されている",
+                        "いない"
+                    ]
+                },
+                {
+                    "id": "6.2",
+                    "name": "要配慮個人情報を含む",
+                    "type": "radio",
+                    "options": [
+                        "含む",
+                        "含まない"
+                    ]
+                },
+                {
+                    "id": "6.3",
+                    "name": "説明項目",
+                    "type": "radio",
+                    "options": [
+                        "説明されている",
+                        "いない"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "7",
+            "title": "添付書類",
+            "fields": [
+                {
+                    "id": "7.1",
+                    "name": "添付書類チェックリスト",
+                    "type": "checkbox",
+                    "options": [
+                        "利益相反自己申告書",
+                        "実施計画書",
+                        "研究対象者への説明文書",
+                        "同意書および同意撤回書",
+                        "ビデオ画像公開承諾書",
+                        "他施設の倫理委員会承認書",
+                        "多施設共同研究実施計画書",
+                        "その他"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "8",
+            "title": "問い合わせ先",
+            "fields": [
+                {
+                    "id": "8.1",
+                    "name": "内線番号",
+                    "type": "text",
+                    "default_from_settings": true
+                },
+                {
+                    "id": "8.2",
+                    "name": "メールアドレス",
+                    "type": "text",
+                    "default_from_settings": true
+                }
+            ]
+        }
+    ],
+    "strict_review_criteria": {
+        "description": "厳格な審査基準（標準より厳しめに設定し承認率を向上）",
+        "criteria": [
+            {
+                "id": "SR1",
+                "name": "リスク記述の網羅性",
+                "check": "4.1〜4.3で「無」を選択した場合でも、想定外リスクの記述を求める"
+            },
+            {
+                "id": "SR2",
+                "name": "対策の具体性",
+                "check": "リスクに対する回避策が具体的なステップで記述されているか"
+            },
+            {
+                "id": "SR3",
+                "name": "緊急時対応",
+                "check": "緊急停止手順、連絡先、対応フローが明記されているか"
+            },
+            {
+                "id": "SR4",
+                "name": "除外基準の妥当性",
+                "check": "特定の状態（妊婦、持病等）の除外が適切に設定されているか"
+            },
+            {
+                "id": "SR5",
+                "name": "同意撤回の手続き",
+                "check": "同意撤回時のデータ削除手順が明確か"
+            },
+            {
+                "id": "SR6",
+                "name": "参加者保護",
+                "check": "参加者が不利益を被らない旨が明記されているか"
+            }
+        ]
+    },
+    "incomplete_plan_handling": {
+        "description": "未充足な研究計画への対応",
+        "required_minimum_fields": [
+            "研究目的（1文以上）",
+            "対象者の概要（成人/未成年、人数の目安）",
+            "実験方法の概要（何をするか）"
+        ],
+        "ai_interpolation_rules": [
+            {
+                "field": "リスク",
+                "rule": "研究方法から想定されるリスクを網羅的に列挙。VR→VR酔い、デバイス→接触圧、アンケート→心理的負担等"
+            },
+            {
+                "field": "除外基準",
+                "rule": "研究方法から除外すべき条件を推測。VR→光過敏症、身体装着→該当部位の障害等"
+            },
+            {
+                "field": "人数根拠",
+                "rule": "統計的検定力分析または先行研究を引用して妥当性を説明"
+            },
+            {
+                "field": "募集方法",
+                "rule": "強制性がないこと、成績評価等に影響しないことを明記"
+            }
+        ],
+        "clarification_questions": [
+            "研究で使用する機器・デバイスの名称は？",
+            "対象者に身体的接触がありますか？",
+            "映像・音声の記録を行いますか？",
+            "謝礼を支払いますか？金額と形式は？"
+        ]
+    }
+}

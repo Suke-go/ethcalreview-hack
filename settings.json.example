@@ -1,0 +1,34 @@
+{
+  "laboratory": {
+    "name": "○○研究室",
+    "building": "総合研究棟B",
+    "room": "XXXX"
+  },
+  "submission_destination": "システム情報系",
+  "principal_investigator": {
+    "name": "山田 太郎",
+    "affiliation": "筑波大学 システム情報系",
+    "position": "准教授",
+    "email": "example@iit.tsukuba.ac.jp",
+    "phone": "029-853-XXXX"
+  },
+  "experiment_conductor": {
+    "phone": "029-853-XXXX"
+  },
+  "ethics_committee": {
+    "name": "筑波大学 システム情報系研究倫理委員会事務局",
+    "office": "システム情報エリア支援室",
+    "phone": "029-853-4989"
+  },
+  "budget": {
+    "source": "運営費交付金",
+    "project_name": "",
+    "reward_per_person": 800,
+    "reward_type": "Amazonギフトカード（Eメールタイプ）",
+    "hourly_rate": 1000
+  },
+  "insurance": {
+    "type": "傷害保険",
+    "coverage": "実験参加者全員"
+  }
+}

@@ -1,0 +1,287 @@
+/* frontend/src/components/RebuttalForm.css */
+
+.rebuttal-form {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.rebuttal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.rebuttal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.rebuttal-description {
+    color: var(--text-secondary, #6b7280);
+    margin: 0.5rem 0 0;
+    font-size: 0.9rem;
+}
+
+/* 入力セクション */
+.rebuttal-input-section {
+    margin-bottom: 1.5rem;
+}
+
+.rebuttal-input-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.rebuttal-input-section textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.rebuttal-input-section textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.rebuttal-input-section textarea::placeholder {
+    color: var(--text-tertiary, #9ca3af);
+}
+
+/* エラー */
+.rebuttal-error {
+    padding: 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #dc2626;
+    margin-bottom: 1rem;
+}
+
+/* アクションボタン */
+.rebuttal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-secondary, #f3f4f6);
+    color: var(--text-primary, #1f2937);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary, #e5e7eb);
+}
+
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* セクション */
+.rebuttal-section {
+    margin-bottom: 2rem;
+}
+
+.rebuttal-section h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary, #1f2937);
+    margin-bottom: 1rem;
+}
+
+/* 入力した指摘事項 */
+.feedback-display {
+    padding: 1rem;
+    background: var(--bg-secondary, #f9fafb);
+    border-radius: 8px;
+    white-space: pre-wrap;
+    color: var(--text-secondary, #4b5563);
+    border-left: 4px solid #f59e0b;
+}
+
+/* 提案リスト */
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.suggestion-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+    border-color: #3b82f6;
+}
+
+.suggestion-item.accepted {
+    border-color: #10b981;
+    background: #f0fdf4;
+}
+
+.suggestion-item.rejected {
+    opacity: 0.7;
+}
+
+.suggestion-checkbox {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.suggestion-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.suggestion-field {
+    margin-bottom: 0.75rem;
+    color: var(--text-primary, #1f2937);
+}
+
+.suggestion-diff {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.diff-before,
+.diff-after {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.diff-before {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.diff-after {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+}
+
+.diff-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary, #9ca3af);
+    margin-bottom: 0.25rem;
+}
+
+.diff-text {
+    color: var(--text-primary, #1f2937);
+}
+
+.diff-arrow {
+    font-size: 1.25rem;
+    color: var(--text-tertiary, #9ca3af);
+    padding-top: 0.75rem;
+}
+
+.suggestion-reason {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #6b7280);
+    padding: 0.5rem;
+    background: var(--bg-secondary, #f9fafb);
+    border-radius: 6px;
+}
+
+/* 回答文テキストエリア */
+.response-textarea {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.response-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+    .rebuttal-header {
+        flex-direction: column;
+    }
+
+    .suggestion-diff {
+        flex-direction: column;
+    }
+
+    .diff-arrow {
+        transform: rotate(90deg);
+        text-align: center;
+        padding: 0.25rem 0;
+    }
+}

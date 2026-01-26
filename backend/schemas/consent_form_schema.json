@@ -1,0 +1,180 @@
+{
+    "template_name": "同意書",
+    "description": "研究参加者向け同意書（説明文書兼用）",
+    "generation_method": "docxtpl_template",
+    "template_file": "03_同意書_template.docx",
+    "sections": [
+        {
+            "id": "header",
+            "title": "ヘッダー",
+            "fields": [
+                {
+                    "name": "研究課題名",
+                    "placeholder": "{{ research_title }}",
+                    "source": "application_form.1.1"
+                },
+                {
+                    "name": "研究責任者",
+                    "placeholder": "{{ pi_name }}",
+                    "source": "settings.principalInvestigator.name"
+                }
+            ]
+        },
+        {
+            "id": "consent_statement",
+            "title": "同意表明文",
+            "type": "fixed_text",
+            "content": "筑波大学システム情報系 {{ pi_name }} は、「{{ research_title }}」について、研究の目的、方法、対象者の必要性、参加に伴うリスクと安全策、危険の回避方法、個人情報の保護およびデータ管理について十分な説明を受け、理解しました。"
+        },
+        {
+            "id": "consent_items",
+            "title": "同意項目",
+            "type": "fixed_list",
+            "items": [
+                "本研究に協力することに同意しなくても不利益を受けない",
+                "同意は自己の自由意思により行う",
+                "参加を途中でやめることができる",
+                "データ提供の同意を撤回できる（同意書提出後90日まで）"
+            ]
+        },
+        {
+            "id": "contacts",
+            "title": "連絡先",
+            "fields": [
+                {
+                    "name": "実施担当者",
+                    "placeholder": "{{ conductor_name }}",
+                    "source": "application_form.1.4"
+                },
+                {
+                    "name": "実施担当者TEL",
+                    "placeholder": "{{ conductor_tel }}",
+                    "source": "settings.experimentConductor.phone"
+                },
+                {
+                    "name": "研究責任者",
+                    "placeholder": "{{ pi_name }}",
+                    "source": "settings.principalInvestigator.name"
+                },
+                {
+                    "name": "研究責任者TEL",
+                    "placeholder": "{{ pi_tel }}",
+                    "source": "settings.principalInvestigator.phone"
+                },
+                {
+                    "name": "倫理委員会",
+                    "placeholder": "{{ ethics_committee }}",
+                    "source": "settings.ethicsCommittee.name"
+                },
+                {
+                    "name": "倫理委員会TEL",
+                    "placeholder": "{{ ethics_tel }}",
+                    "source": "settings.ethicsCommittee.phone"
+                }
+            ]
+        },
+        {
+            "id": "research_overview",
+            "title": "研究概要（別紙）",
+            "subsections": [
+                {
+                    "id": "participant_criteria",
+                    "name": "[対象者条件]",
+                    "placeholder": "{{ participant_criteria }}",
+                    "source": "application_form.3.4",
+                    "ai_generated": true
+                },
+                {
+                    "id": "purpose",
+                    "name": "[目的]",
+                    "placeholder": "{{ research_purpose }}",
+                    "source": "research_plan",
+                    "ai_generated": true
+                },
+                {
+                    "id": "significance",
+                    "name": "[意義]",
+                    "placeholder": "{{ research_significance }}",
+                    "source": "research_plan",
+                    "ai_generated": true
+                },
+                {
+                    "id": "method",
+                    "name": "[方法]",
+                    "placeholder": "{{ research_method }}",
+                    "source": "research_plan",
+                    "ai_generated": true
+                },
+                {
+                    "id": "procedure",
+                    "name": "[手順]",
+                    "placeholder": "{{ experiment_procedure }}",
+                    "source": "research_plan",
+                    "ai_generated": true,
+                    "type": "numbered_list"
+                },
+                {
+                    "id": "duration",
+                    "name": "[所要時間]",
+                    "placeholder": "{{ duration_minutes }}",
+                    "source": "user_input"
+                },
+                {
+                    "id": "risks",
+                    "name": "[想定されるリスク]",
+                    "placeholder": "{{ risks }}",
+                    "source": "application_form.4",
+                    "ai_generated": true,
+                    "strict_review": true
+                },
+                {
+                    "id": "reward",
+                    "name": "[謝礼]",
+                    "placeholder": "{{ reward_amount }} {{ reward_type }}",
+                    "source": "settings.budget",
+                    "template": "謝礼としてAmazonギフトカード（Eメールタイプ）にて{{ reward_amount }}円お支払いします。"
+                },
+                {
+                    "id": "data_protection",
+                    "name": "[個人情報の保護]",
+                    "placeholder": "{{ data_protection }}",
+                    "source": "application_form.2.6",
+                    "ai_generated": true,
+                    "subsections": [
+                        {
+                            "name": "(1) データの匿名化について",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "(2) データの管理方法",
+                            "ai_generated": true
+                        },
+                        {
+                            "name": "(3) 参加の任意性・撤回権",
+                            "fixed_text": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "signature",
+            "title": "署名欄",
+            "type": "table",
+            "fields": [
+                {
+                    "name": "日付",
+                    "placeholder": "令和　年　月　日"
+                },
+                {
+                    "name": "署名",
+                    "placeholder": "（署名欄）"
+                },
+                {
+                    "name": "18歳未満確認",
+                    "placeholder": "{{ age_confirmation }}"
+                }
+            ]
+        }
+    ]
+}

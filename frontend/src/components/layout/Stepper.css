@@ -1,0 +1,104 @@
+/* frontend/src/components/layout/Stepper.css */
+
+.stepper {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-6);
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--spacing-6);
+    overflow-x: auto;
+}
+
+.stepper-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    flex-shrink: 0;
+}
+
+.stepper-item.clickable {
+    cursor: pointer;
+}
+
+.stepper-indicator {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: var(--text-sm);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.stepper-item.current .stepper-indicator {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.stepper-item.completed .stepper-indicator {
+    background-color: var(--color-success);
+    color: #ffffff;
+}
+
+.stepper-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stepper-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.stepper-item.current .stepper-label {
+    color: var(--text-primary);
+}
+
+.stepper-item.completed .stepper-label {
+    color: var(--color-success);
+}
+
+.stepper-description {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.stepper-connector {
+    flex: 1;
+    min-width: 40px;
+    height: 4px;
+    background-color: var(--color-gray-200);
+    border-radius: var(--radius-full);
+    margin: 0 var(--spacing-3);
+    align-self: center;
+}
+
+.stepper-connector.completed {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+}
+
+@media (max-width: 768px) {
+    .stepper {
+        padding: var(--spacing-4);
+    }
+
+    .stepper-content {
+        display: none;
+    }
+
+    .stepper-connector {
+        min-width: 20px;
+        margin-top: 0;
+    }
+}

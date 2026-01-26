@@ -269,6 +269,68 @@
     border-color: #3b82f6;
 }
 
+/* 解釈・対応方針セクション */
+.interpretation-section {
+    background: linear-gradient(135deg, var(--color-info-bg, #ecfeff), rgba(8, 145, 178, 0.05));
+    border: 1px solid rgba(8, 145, 178, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.interpretation-content {
+    color: var(--text-secondary, #4b5563);
+}
+
+.interpretation-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.interpretation-list li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.interpretation-list strong {
+    color: var(--color-primary, #2563eb);
+}
+
+/* セクション説明 */
+.section-description {
+    font-size: 0.875rem;
+    color: var(--text-muted, #9ca3af);
+    margin: 0 0 1rem 0;
+}
+
+/* メールセクション */
+.email-section {
+    background: var(--bg-secondary, #f9fafb);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.email-section h3 {
+    color: var(--color-primary, #2563eb);
+}
+
+/* コピーボタン */
+.btn-copy {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary, #e5e7eb);
+    color: var(--text-primary, #1f2937);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-copy:hover {
+    background: var(--color-primary, #2563eb);
+    color: white;
+}
+
 /* レスポンシブ */
 @media (max-width: 640px) {
     .rebuttal-header {
@@ -283,5 +345,10 @@
         transform: rotate(90deg);
         text-align: center;
         padding: 0.25rem 0;
+    }
+
+    .interpretation-section,
+    .email-section {
+        padding: 1rem;
     }
 }

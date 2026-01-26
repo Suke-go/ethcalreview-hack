@@ -214,7 +214,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
+  z-index: 1100;
+  /* Above onboarding (1000) */
   padding: var(--spacing-4);
 }
 

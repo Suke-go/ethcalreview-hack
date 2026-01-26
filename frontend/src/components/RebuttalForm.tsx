@@ -158,9 +158,28 @@ export function RebuttalForm({ sessionId, onComplete }: RebuttalFormProps) {
                 </div>
             </div>
 
-            {/* 修正提案リスト */}
+            {/* 指摘の解釈・対応方針 */}
+            <div className="rebuttal-section interpretation-section">
+                <h3>🔍 指摘の解釈・対応方針</h3>
+                <div className="interpretation-content">
+                    {result.suggestions.length > 0 ? (
+                        <ul className="interpretation-list">
+                            {result.suggestions.map((suggestion, index) => (
+                                <li key={index}>
+                                    <strong>{suggestion.field}</strong>: {suggestion.reason}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>指摘事項に対する具体的な修正提案を生成しました。</p>
+                    )}
+                </div>
+            </div>
+
+            {/* 文書修正提案リスト */}
             <div className="rebuttal-section">
-                <h3>💡 AI修正提案</h3>
+                <h3>📝 文書修正提案</h3>
+                <p className="section-description">チェックした項目が書類に反映されます</p>
                 <div className="suggestions-list">
                     {result.suggestions.map((suggestion, index) => (
                         <div
@@ -186,24 +205,33 @@ export function RebuttalForm({ sessionId, onComplete }: RebuttalFormProps) {
                                         <span className="diff-text">{suggestion.suggestedValue}</span>
                                     </div>
                                 </div>
-                                <div className="suggestion-reason">
-                                    💬 {suggestion.reason}
-                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* 回答文案 */}
-            <div className="rebuttal-section">
-                <h3>📧 委員会への回答文案</h3>
+            {/* 回答メール文案 */}
+            <div className="rebuttal-section email-section">
+                <h3>📧 委員会への回答メール文案</h3>
+                <p className="section-description">
+                    修正完了後、このメールを委員会に送信してください
+                </p>
                 <textarea
                     value={editedResponse}
                     onChange={(e) => setEditedResponse(e.target.value)}
-                    rows={10}
+                    rows={12}
                     className="response-textarea"
                 />
+                <button
+                    className="btn-copy"
+                    onClick={() => {
+                        navigator.clipboard.writeText(editedResponse);
+                        alert('クリップボードにコピーしました');
+                    }}
+                >
+                    📋 コピー
+                </button>
             </div>
 
             {error && (
@@ -221,7 +249,7 @@ export function RebuttalForm({ sessionId, onComplete }: RebuttalFormProps) {
                     onClick={handleApply}
                     disabled={loading}
                 >
-                    {loading ? '適用中...' : '✓ 修正を適用'}
+                    {loading ? '適用中...' : '✓ 修正を適用してDOCXを再生成'}
                 </button>
             </div>
         </div>

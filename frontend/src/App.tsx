@@ -15,6 +15,7 @@ import { RebuttalForm } from './components/RebuttalForm';
 import { Button } from './components/common/Button';
 import { Input, Textarea } from './components/common/Input';
 import { ProgressStepper } from './components/ProgressStepper';
+import { OnboardingTutorial, useOnboarding } from './components/OnboardingTutorial';
 import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
 import { setApiKey, getSession, getDownloadUrl } from './api/client';
@@ -105,6 +106,9 @@ function App() {
 
   // SSE for document generation
   const generateSSE = useSSE<{ sessionId: string }>();
+
+  // Onboarding
+  const { showOnboarding, setShowOnboarding } = useOnboarding();
 
   // 書類生成（非SSE版は削除、SSEを使用）
 
@@ -722,15 +726,34 @@ function App() {
                     {currentStep === 3 && (
                       <>
                         {generatedSessionId ? (
-                          <Button
-                            variant="success"
-                            size="lg"
-                            onClick={() => {
-                              window.open(getDownloadUrl(generatedSessionId), '_blank');
-                            }}
-                          >
-                            📥 ZIPファイルをダウンロード
-                          </Button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
+                            <Button
+                              variant="success"
+                              size="lg"
+                              onClick={() => {
+                                window.open(getDownloadUrl(generatedSessionId), '_blank');
+                              }}
+                            >
+                              📥 ZIPファイルをダウンロード
+                            </Button>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
+                                  setSelectedSessionId(generatedSessionId);
+                                  setCurrentView('rebuttal');
+                                }}
+                              >
+                                📝 審査コメントへの対応
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                onClick={handleBackToSessions}
+                              >
+                                セッション一覧へ
+                              </Button>
+                            </div>
+                          </div>
                         ) : (
                           <p style={{ color: 'orange' }}>セッションIDを取得中...</p>
                         )}
@@ -773,6 +796,14 @@ function App() {
         pauseOnHover
         theme="light"
       />
+
+      {/* Onboarding Tutorial */}
+      {showOnboarding && (
+        <OnboardingTutorial
+          onComplete={() => setShowOnboarding(false)}
+          onOpenSettings={() => setShowSettings(true)}
+        />
+      )}
     </div>
   );
 }

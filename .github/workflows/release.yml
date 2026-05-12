@@ -93,6 +93,9 @@ jobs:
       - name: Install frontend deps
         run: npm --prefix frontend ci
 
+      - name: Build frontend (Vite)
+        run: npm --prefix frontend run build
+
       - name: Tauri build
         shell: bash
         run: npm --prefix frontend exec -- tauri build --target ${{ matrix.target }}

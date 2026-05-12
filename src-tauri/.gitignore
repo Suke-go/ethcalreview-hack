@@ -1,0 +1,8 @@
+# Tauri build artifacts
+target/
+gen/
+binaries/backend-*
+*.exe
+*.dmg
+*.msi
+*.app

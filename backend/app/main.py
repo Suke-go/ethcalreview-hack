@@ -31,12 +31,13 @@ if sys.platform == 'win32':
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 
 from app.api import settings, analyze, generate, review
 from app.api import analyze_stream, review_stream, generate_stream
-from app.api import session, rebuttal, detect, consent, documents
+from app.api import session, rebuttal, detect, consent, documents, ingest
 
 app = FastAPI(
     title="EthicalReviewHacker API",
@@ -112,13 +113,55 @@ app.include_router(rebuttal.router, prefix="/api/rebuttal", tags=["Rebuttal"])
 app.include_router(detect.router, prefix="/api/detect", tags=["Detection"])
 app.include_router(consent.router, prefix="/api/consent", tags=["Consent Forms"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Document Generation"])
-
-
-@app.get("/")
-async def root():
-    return {"message": "EthicalReviewHacker API", "version": "0.1.0"}
+app.include_router(ingest.router, prefix="/api/ingest", tags=["Document Ingestion"])
 
 
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+# ============================================================
+# フロントエンドの静的配信 (SPA)
+# - ERH_FRONTEND_DIST 環境変数で明示指定可
+# - 既定では <project_root>/frontend/dist を探す (Web ホスティング / Tauri 双方で利用)
+# - dist が無ければ API のみのモードで起動 (開発時 / Vite dev server と併用)
+# ============================================================
+
+def _resolve_frontend_dist() -> Path | None:
+    """フロントエンドのビルド成果物ディレクトリを解決する。"""
+    explicit = os.environ.get("ERH_FRONTEND_DIST")
+    if explicit:
+        p = Path(explicit)
+        return p if p.exists() else None
+
+    project_root = Path(__file__).parent.parent.parent
+    candidates = [
+        project_root / "frontend" / "dist",   # 通常のリポジトリ構成
+        Path(__file__).parent.parent / "dist",  # PyInstaller bundle が backend/dist にコピーされた場合
+        Path(getattr(sys, "_MEIPASS", "")) / "frontend" / "dist" if hasattr(sys, "_MEIPASS") else None,
+    ]
+    for c in candidates:
+        if c and c.exists() and (c / "index.html").exists():
+            return c
+    return None
+
+
+_FRONTEND_DIST = _resolve_frontend_dist()
+
+if _FRONTEND_DIST is not None:
+    print(f"[MAIN] Serving frontend SPA from {_FRONTEND_DIST}", flush=True)
+
+    # /api/* は include_router で先に登録済みなので、こちらが先に match される。
+    # ここでの mount は残った GET にだけ index.html / 静的ファイルを返す。
+    app.mount(
+        "/",
+        StaticFiles(directory=_FRONTEND_DIST, html=True),
+        name="spa",
+    )
+else:
+    print("[MAIN] frontend/dist not found; running in API-only mode", flush=True)
+
+    @app.get("/", include_in_schema=False)
+    async def root():
+        return {"message": "EthicalReviewHacker API", "version": "0.1.0"}

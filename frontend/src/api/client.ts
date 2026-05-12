@@ -5,17 +5,33 @@ import axios, { type AxiosInstance, type AxiosError } from 'axios';
 import type {
     Settings,
     AnalysisResult,
-    FormData,
+    FormData as ResearchFormData,
     GenerateResponse,
     ReviewResult,
     SessionSummary,
     SessionDetail,
     RebuttalSuggestions,
     SessionStatus,
+    PresetBundle,
 } from '../types';
 
 // APIのベースURL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+//   優先順位:
+//   1. Tauri ランタイム内なら sidecar の固定ポート (src-tauri/src/lib.rs の BACKEND_PORT と一致させる)
+//   2. VITE_API_URL 環境変数 (開発時 frontend/.env.development や CI で上書き)
+//   3. 同一オリジン("") — FastAPI 静的配信 / Web ホスティング時のフォールバック
+function resolveApiBaseUrl(): string {
+    if (typeof window !== 'undefined') {
+        // Tauri 2.x は __TAURI_INTERNALS__、Tauri 1.x は __TAURI__ を window に注入
+        const w = window as unknown as Record<string, unknown>;
+        if ('__TAURI_INTERNALS__' in w || '__TAURI__' in w) {
+            return 'http://127.0.0.1:17500';
+        }
+    }
+    return (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 // タイムアウト設定
 const API_TIMEOUT_LONG = 600000;  // 10分（書類生成などLLM処理用）
@@ -92,6 +108,11 @@ export const updateSettings = async (settings: Partial<Settings>): Promise<Setti
     return response.data;
 };
 
+export const getPresets = async (): Promise<PresetBundle> => {
+    const response = await fastClient.get<PresetBundle>('/api/settings/presets');
+    return response.data;
+};
+
 export interface RewardCalculationRequest {
     durationMinutes: number;
 }
@@ -138,7 +159,7 @@ interface GenerateResponseRaw {
 }
 
 export const generateDocuments = async (
-    formData: FormData
+    formData: ResearchFormData
 ): Promise<GenerateResponse> => {
     const response = await defaultClient.post<GenerateResponseRaw>('/api/generate', {
         form_data: formData,  // Changed from formData to form_data (snake_case)
@@ -149,6 +170,32 @@ export const generateDocuments = async (
         sessionId: response.data.session_id,
         status: response.data.status as GenerateResponse['status'],
     };
+};
+
+export interface IngestedDocument {
+    filename: string;
+    content_type: string;
+    text: string;
+    warnings: string[];
+}
+
+export interface IngestResponse {
+    documents: IngestedDocument[];
+    combined_text: string;
+    warnings: string[];
+}
+
+export const ingestStudyDocuments = async (
+    files: File[]
+): Promise<IngestResponse> => {
+    const payload = new globalThis.FormData();
+    files.forEach((file) => payload.append('files', file));
+    const response = await defaultClient.post<IngestResponse>('/api/ingest/documents', payload, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+    return response.data;
 };
 
 // 生成状態確認API

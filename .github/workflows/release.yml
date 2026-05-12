@@ -1,0 +1,193 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (例: v0.1.0)。空欄なら artifact のみで Release は作らない'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: '.exe'
+          - os: macos-14
+            target: aarch64-apple-darwin
+            ext: ''
+          - os: macos-13
+            target: x86_64-apple-darwin
+            ext: ''
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'src-tauri -> target'
+
+      # ===== Backend sidecar (PyInstaller onefile) =====
+      - name: Install Python deps
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pyinstaller
+
+      - name: Build backend sidecar
+        working-directory: backend
+        shell: bash
+        run: |
+          python -m PyInstaller --clean --noconfirm \
+            --distpath dist-onefile --workpath build-onefile \
+            backend-onefile.spec
+
+      - name: Stage sidecar to src-tauri/binaries
+        shell: bash
+        run: |
+          mkdir -p src-tauri/binaries
+          SRC="backend/dist-onefile/backend${{ matrix.ext }}"
+          DST="src-tauri/binaries/backend-${{ matrix.target }}${{ matrix.ext }}"
+          cp "$SRC" "$DST"
+          chmod +x "$DST" || true
+          ls -lh src-tauri/binaries/
+
+      # ===== Frontend + Tauri build =====
+      - name: Install frontend deps
+        run: npm --prefix frontend ci
+
+      - name: Tauri build
+        shell: bash
+        run: npm --prefix frontend exec -- tauri build --target ${{ matrix.target }}
+
+      # ===== Collect installers =====
+      - name: Collect installers
+        shell: bash
+        run: |
+          mkdir -p _out
+          BASE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          # Windows
+          cp -v "$BASE"/msi/*.msi   _out/ 2>/dev/null || true
+          cp -v "$BASE"/nsis/*.exe  _out/ 2>/dev/null || true
+          # macOS
+          cp -v "$BASE"/dmg/*.dmg   _out/ 2>/dev/null || true
+          # macOS unsigned .app は dmg に同梱されるので個別配布不要
+          echo "==="
+          ls -lh _out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.target }}
+          path: _out/*
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: bundle-*
+          merge-multiple: true
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            echo "name=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create / update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          ls -lh _artifacts/
+
+          NOTES=$(cat <<'EOF'
+## ダウンロード
+
+| OS | ファイル |
+|---|---|
+| Windows x64 | `EthicalReviewHacker_*_x64_en-US.msi` または `*_x64-setup.exe` |
+| macOS Apple Silicon (M1/M2/M3/M4) | `EthicalReviewHacker_*_aarch64.dmg` |
+| macOS Intel | `EthicalReviewHacker_*_x64.dmg` |
+
+## ⚠️ macOS をお使いの方へ
+
+このアプリは Apple のコード署名・公証を行っていないため、初回起動時に Gatekeeper が「壊れている」「開発元を確認できない」と表示します。以下のいずれかで回避できます:
+
+**方法 A (推奨): ターミナルで quarantine 属性を外す**
+
+```
+xattr -dr com.apple.quarantine /Applications/EthicalReviewHacker.app
+```
+
+**方法 B: Finder で右クリック → 「開く」を 2 回繰り返す**
+
+## ⚠️ Windows をお使いの方へ
+
+SmartScreen が「PC を保護しました」と表示する場合は、「詳細情報」→「実行」 で起動できます。
+
+## 初回設定
+
+起動後、右上 ⚙ から **Gemini API Key** または **OpenAI API Key** を保存してください。
+EOF
+)
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; updating notes & uploading"
+            gh release edit "$TAG" --notes "$NOTES"
+          else
+            gh release create "$TAG" --draft \
+              --title "EthicalReviewHacker $TAG" \
+              --notes "$NOTES"
+          fi
+          gh release upload "$TAG" _artifacts/* --clobber

@@ -8,12 +8,14 @@ from pathlib import Path
 from datetime import datetime
 import traceback
 
+from app.config import app_config
 from app.models.session import Session, SessionStatus, StepStatus
 
 router = APIRouter()
 
-# セッション保存ディレクトリ（絶対パスに解決）
-SESSIONS_DIR = Path(__file__).parent.parent.parent.resolve() / "sessions"
+# セッション保存ディレクトリは ETHICS_DATA_DIR/sessions に統一
+# (PyInstaller / Tauri バンドルでも永続化される)
+SESSIONS_DIR = app_config.sessions_dir
 print(f"[Session API] SESSIONS_DIR: {SESSIONS_DIR}")
 
 

@@ -2,19 +2,14 @@
   "name": "ethics-review-helper",
   "private": true,
   "version": "1.0.0",
-  "description": "倫理審査書類自動生成アプリ",
+  "description": "研究倫理審査書類の生成支援Webアプリ",
   "author": "Zempo Lab",
-  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron ../electron/main.cjs\"",
-    "electron:prebuild": "xcopy /E /I /Y ..\\electron electron",
-    "electron:build": "npm run build && npm run electron:prebuild && electron-builder",
-    "electron:pack": "npm run electron:prebuild && electron-builder --dir"
+    "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -27,48 +22,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/cli": "^2.11.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
-    "concurrently": "^9.0.1",
-    "electron": "^33.0.0",
-    "electron-builder": "^25.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4",
-    "wait-on": "^8.0.0"
-  },
-  "build": {
-    "appId": "jp.ac.tsukuba.ethics-review-helper",
-    "productName": "Ethics Review Helper",
-    "directories": {
-      "output": "../dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "public/icon.ico"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "public/icon.icns"
-    },
-    "extraResources": [
-      {
-        "from": "../backend-dist",
-        "to": "backend-dist",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ]
+    "vite": "^7.2.4"
   }
 }

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "EthicalReviewHacker",
+  "version": "0.1.0",
+  "identifier": "jp.ac.tsukuba.zempo.ethicalreviewhacker",
+  "build": {
+    "beforeDevCommand": "npm --prefix frontend run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm --prefix frontend run build",
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "EthicalReviewHacker",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "capabilities": ["default"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis", "dmg", "app"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": ["binaries/backend"],
+    "resources": [],
+    "copyright": "© Zempo Lab",
+    "category": "Productivity",
+    "shortDescription": "研究倫理審査書類の生成支援",
+    "longDescription": "筑波大学の研究倫理審査申請書類を AI で自動生成するデスクトップアプリ"
+  }
+}

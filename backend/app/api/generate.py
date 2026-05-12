@@ -16,21 +16,26 @@ import json
 from app.services.orchestrator import orchestrate_document_generation, DocumentType
 from app.services.llm_client import create_llm_client
 from app.services.lab_defaults_manager import load_lab_defaults
+from app.services.preset_manager import load_preset_bundle
+from app.services.form_context_builder import build_generation_context
+from app.services.context_text_enricher import enrich_generation_context_with_llm, flatten_context_for_llm_form_data
+from app.services.generation_validator import error_issues, issue_payload, validate_generation_context
 from app.models.session import Session, SessionStatus, StepStatus
-from app.config import app_config
+from app.config import app_config, load_user_settings
 from app.logger import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter()
 
-# セッション保存ディレクトリ
-SESSIONS_DIR = Path(__file__).parent.parent.parent.resolve() / "sessions"
+# セッション保存ディレクトリ (ETHICS_DATA_DIR/sessions)
+SESSIONS_DIR = app_config.sessions_dir
 
 
 class GenerateRequest(BaseModel):
     """書類生成リクエスト"""
     form_data: Dict[str, Any]
+    app_config: Optional[Dict[str, Any]] = None
     # 書類生成オプション（ケースバイケースで選択可能）
     include_questionnaire: bool = True     # アンケートを含めるか
     include_consent_forms: bool = True     # 同意書・同意撤回書を含めるか
@@ -142,11 +147,52 @@ async def generate_documents(
     except Exception as e:
         logger.warning(f"lab_defaults読み込み失敗: {e}, デフォルト値を使用")
         lab_defaults = {}
+
+    try:
+        settings = load_user_settings(app_config)
+        preset_bundle = load_preset_bundle(app_config)
+        merged_form_data = {**request.form_data}
+        if request.app_config:
+            merged_form_data["app_config"] = request.app_config
+        generation_context = build_generation_context(
+            form_data=merged_form_data,
+            settings=settings,
+            preset_bundle=preset_bundle,
+        )
+        generation_context = await enrich_generation_context_with_llm(generation_context, llm_client)
+        session.steps.generate.preset_snapshot = generation_context.get("meta", {}).get("preset_snapshot", {})
+        session.steps.generate.context_snapshot = generation_context
+        session.save(SESSIONS_DIR)
+    except Exception as e:
+        logger.error(f"context build failed: {e}")
+        session.steps.generate.status = StepStatus.ERROR
+        session.steps.generate.error = f"context build failed: {e}"
+        session.save(SESSIONS_DIR)
+        raise HTTPException(status_code=500, detail=f"生成コンテキストの構築に失敗しました: {str(e)}")
+
+    validation_issues = validate_generation_context(generation_context)
+    validation_errors = error_issues(validation_issues)
+    if validation_errors:
+        session.steps.generate.status = StepStatus.ERROR
+        session.steps.generate.error = "入力不足があります"
+        session.save(SESSIONS_DIR)
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "入力不足があるため、提出用DOCXは生成しません。",
+                "issues": issue_payload(validation_issues),
+            },
+        )
+
+    orchestrator_form_data = {
+        **flatten_context_for_llm_form_data(merged_form_data, generation_context),
+        "_generation_context": generation_context,
+    }
     
     # オーケストレーター実行（並列生成）
     try:
         result = await orchestrate_document_generation(
-            form_data=request.form_data,
+            form_data=orchestrator_form_data,
             output_dir=output_dir,
             templates_dir=app_config.templates_dir,
             llm_client=llm_client,
@@ -235,21 +281,20 @@ async def check_required_info(
     Returns:
         不足している情報のリスト
     """
-    from app.services.orchestrator import DocumentOrchestrator
-    
-    # ダミーのオーケストレーターを作成（LLM不要）
-    orchestrator = DocumentOrchestrator(
-        llm_client=None,
-        lab_defaults={},
-        templates_dir=Path("."),
-        output_dir=Path(".")
+    settings = load_user_settings(app_config)
+    preset_bundle = load_preset_bundle(app_config)
+    generation_context = build_generation_context(
+        form_data=form_data,
+        settings=settings,
+        preset_bundle=preset_bundle,
     )
-    
-    missing = orchestrator.check_required_info(form_data)
+    issues = validate_generation_context(generation_context)
+    errors = error_issues(issues)
     
     return {
-        "complete": len(missing) == 0,
-        "missing_fields": [m.model_dump() for m in missing]
+        "complete": len(errors) == 0,
+        "missing_fields": issue_payload(errors),
+        "issues": issue_payload(issues),
     }
 
 

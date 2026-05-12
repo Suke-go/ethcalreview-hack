@@ -1,18 +1,18 @@
-"""
-設定管理
-"""
-from pydantic_settings import BaseSettings
-from pydantic import BaseModel
-from pathlib import Path
+from __future__ import annotations
+
 import json
 import os
-from typing import Optional
+import sys
+from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict
+from pydantic_settings import BaseSettings
 
 
 class LaboratorySettings(BaseModel):
     name: str = "善甫研究室"
     building: str = "総合研究棟B"
-    room: str = "0911"
+    room: str = "3M211"
 
 
 class InvestigatorSettings(BaseModel):
@@ -28,7 +28,7 @@ class ExperimentConductorSettings(BaseModel):
 
 
 class EthicsCommitteeSettings(BaseModel):
-    name: str = "筑波大学 システム情報系研究倫理委員会事務局"
+    name: str = "筑波大学 システム情報系 研究倫理委員会"
     office: str = "システム情報エリア支援室"
     phone: str = "029-853-4989"
 
@@ -37,8 +37,8 @@ class BudgetSettings(BaseModel):
     source: str = "運営費交付金"
     project_name: str = ""
     reward_per_person: int = 800
-    reward_type: str = "Amazonギフトカード（Eメールタイプ）"
-    hourly_rate: int = 1000  # 60分1000円基準
+    reward_type: str = "Amazonギフトカード（メールタイプ）"
+    hourly_rate: int = 1000
 
 
 class InsuranceSettings(BaseModel):
@@ -47,7 +47,6 @@ class InsuranceSettings(BaseModel):
 
 
 class UserSettings(BaseModel):
-    """ユーザー設定（ローカルJSONに保存）"""
     laboratory: LaboratorySettings = LaboratorySettings()
     submission_destination: str = "システム情報系"
     principal_investigator: InvestigatorSettings = InvestigatorSettings()
@@ -57,48 +56,59 @@ class UserSettings(BaseModel):
     insurance: InsuranceSettings = InsuranceSettings()
 
 
-def _get_data_dir() -> Path:
+def _get_bundle_root() -> Path:
+    """同梱データ (templates, schemas, presets) のルートを返す。
+
+    - PyInstaller bundle 内 (frozen): sys._MEIPASS / 同梱データはここに展開される
+    - 通常の Python 実行: backend/ ディレクトリ
     """
-    データディレクトリを取得
-    
-    優先順位:
-    1. ETHICS_DATA_DIR 環境変数（Electron設定）
-    2. プロジェクトルート（開発用）
+    if getattr(sys, "frozen", False):
+        return Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+    return Path(__file__).parent.parent  # = backend/
+
+
+def _get_data_dir() -> Path:
+    """ユーザー固有データ (settings.json, sessions, output, lab_defaults.json) の保存先。
+
+    - ETHICS_DATA_DIR 環境変数で明示できる (Tauri / Docker で外部ボリュームに向ける)
+    - 未設定時:
+        * frozen (PyInstaller 単体実行): 実行ファイルの隣 (ポータブル動作)
+        * 通常実行: backend/ ディレクトリ
+          (既存リポジトリで sessions / output / settings.json が backend/ 直下に置かれている前提)
     """
     if data_dir := os.environ.get("ETHICS_DATA_DIR"):
         return Path(data_dir)
-    return Path(__file__).parent.parent.parent
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).parent.parent  # = backend/
+
+
+_BUNDLE_ROOT = _get_bundle_root()
 
 
 class AppConfig(BaseSettings):
-    """アプリケーション設定"""
-    # プロジェクトルート（main.pyの親の親ディレクトリ）
     project_root: Path = Path(__file__).parent.parent.parent
-    
-    # データディレクトリ（Electron時は別ディレクトリ）
+    bundle_root: Path = _BUNDLE_ROOT
     data_dir: Path = _get_data_dir()
-    
-    # 設定ファイル
+
     settings_file: Path = data_dir / "settings.json"
     lab_defaults_file: Path = data_dir / "lab_defaults.json"
-    
-    # ディレクトリ
-    templates_dir: Path = project_root / "backend" / "templates"
+
+    templates_dir: Path = _BUNDLE_ROOT / "templates"
+    presets_dir: Path = _BUNDLE_ROOT / "presets"
+    schemas_dir: Path = _BUNDLE_ROOT / "schemas"
+    user_presets_dir: Path = data_dir / "presets"
     output_dir: Path = data_dir / "output"
     sessions_dir: Path = data_dir / "sessions"
-    schemas_dir: Path = project_root / "backend" / "app" / "schemas"
-    
-    class Config:
-        env_prefix = "ERH_"
-    
-    def ensure_dirs(self):
-        """必要なディレクトリを作成"""
-        for dir_path in [self.output_dir, self.sessions_dir]:
+
+    model_config = ConfigDict(env_prefix="ERH_")
+
+    def ensure_dirs(self) -> None:
+        for dir_path in [self.output_dir, self.sessions_dir, self.user_presets_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
 
 def load_user_settings(config: AppConfig) -> UserSettings:
-    """ユーザー設定をJSONから読み込み"""
     if config.settings_file.exists():
         with open(config.settings_file, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -107,28 +117,22 @@ def load_user_settings(config: AppConfig) -> UserSettings:
 
 
 def save_user_settings(settings: UserSettings, config: AppConfig) -> None:
-    """ユーザー設定をJSONに保存"""
     with open(config.settings_file, "w", encoding="utf-8") as f:
         json.dump(settings.model_dump(), f, ensure_ascii=False, indent=2)
 
 
 def load_lab_defaults(config: AppConfig) -> dict:
-    """lab_defaults.jsonを読み込み（Electron用外部ファイル対応）"""
-    # ユーザーデータディレクトリを優先
     if config.lab_defaults_file.exists():
         with open(config.lab_defaults_file, "r", encoding="utf-8") as f:
             return json.load(f)
-    
-    # フォールバック: backend/lab_defaults.json
+
     fallback = config.project_root / "backend" / "lab_defaults.json"
     if fallback.exists():
         with open(fallback, "r", encoding="utf-8") as f:
             return json.load(f)
-    
+
     return {}
 
 
-# グローバル設定インスタンス
 app_config = AppConfig()
 app_config.ensure_dirs()
-

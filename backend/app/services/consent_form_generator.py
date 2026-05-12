@@ -2,32 +2,69 @@
 同意書生成サービス（研究計画概要付き）
 
 フォームデータから研究計画概要を含む同意書をdocx形式で生成します。
+裏面「研究の概要について」の各項目は、フォームが空の場合 LLM で自動補完します。
 """
 
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from datetime import datetime
 
+from app.services.llm_client import LLMClient
+from app.services.academic_writing_generator import generate_research_plan_sections
+from app.logger import get_logger
 
-def generate_consent_form_with_plan(
+logger = get_logger(__name__)
+
+
+# LLM が使えない/失敗した場合のフォールバック文言
+_FALLBACK_PLACEHOLDERS: Dict[str, str] = {
+    "participant_criteria": (
+        "成人（18歳以上）で、本研究の趣旨について十分な説明を受け、参加に同意の得られた健常者を対象とする。"
+        "重篤な疾患を有する者、および研究内容の理解が困難な者は除外される。"
+        "研究への参加は任意であり、不参加によって不利益が生じることはない。"
+    ),
+    "research_purpose": (
+        "本研究は、研究課題に関連する現象について実験的に検証し、その特性を明らかにすることを目的とする。"
+    ),
+    "research_significance": (
+        "本研究で得られる知見は、関連する学術分野の理解に資するとともに、"
+        "今後の応用研究の基礎として貢献することが期待される。"
+    ),
+    "research_method": (
+        "実験室環境において、研究対象者に所定の課題を遂行してもらい、必要な計測および記録を行う。"
+        "実験手続きは研究計画に従って統制される。"
+    ),
+    "risks": (
+        "本研究において、日常生活で生じる程度を超えるリスクは想定されない。"
+        "万一、研究対象者が体調不良を訴えた場合は直ちに実験を中止し、適切に対応する。"
+    ),
+}
+
+
+async def generate_consent_form_with_plan(
     form_data: Dict[str, Any],
     output_dir: Path,
-    lab_defaults: Dict[str, Any]
+    lab_defaults: Dict[str, Any],
+    llm_client: Optional[LLMClient] = None,
 ) -> Path:
     """
     研究計画概要を含む同意書を生成
-    
+
     Args:
         form_data: フォームデータ
         output_dir: 出力ディレクトリ
         lab_defaults: 研究室デフォルト設定
-    
+        llm_client: LLM クライアント（None の場合はフォールバック文言を使用）
+
     Returns:
         生成されたファイルのパス
     """
+    # 裏面「研究の概要について」の各項目を、未入力なら自動補完
+    form_data = await _ensure_back_side_sections(form_data, lab_defaults, llm_client)
+
     doc = Document()
     
     # スタイル設定（11pt統一）
@@ -177,13 +214,120 @@ def _add_section(doc: Document, title: str, content: str):
     """セクションを追加するヘルパー関数"""
     if not content:
         return
-    
+
     heading = doc.add_paragraph()
     heading.add_run(f'[{title}]').bold = True
-    
+
     # 改行を保持してパラグラフ追加
     for line in content.split('\n'):
         if line.strip():
             doc.add_paragraph(line.strip())
-    
+
     doc.add_paragraph()
+
+
+# ============================================================
+# 裏面「研究の概要について」の自動補完ロジック
+# ============================================================
+
+# LLM で生成する記述系フィールド（一括生成）
+_AI_TEXT_FIELDS = (
+    "participant_criteria",
+    "research_purpose",
+    "research_significance",
+    "research_method",
+    "risks",
+)
+
+
+def _is_blank(value: Any) -> bool:
+    """フォーム値が空(未入力)かどうかを判定"""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, dict, tuple, set)):
+        return len(value) == 0
+    return False
+
+
+def _estimate_reward_amount(duration_minutes: Any) -> int:
+    """所要時間から大まかな謝礼額を見積もる（時給1000円換算 / 30分刻み 500円）"""
+    try:
+        minutes = int(duration_minutes)
+    except (TypeError, ValueError):
+        minutes = 60
+    return max(500, int(round(minutes / 30) * 500))
+
+
+def _brief_description_from_form(form: Dict[str, Any]) -> str:
+    """LLM 生成の入力となる『簡単な説明』をフォームから組み立てる"""
+    candidates = [
+        form.get("brief_description"),
+        form.get("research_overview"),
+        form.get("background"),
+        form.get("purpose"),
+        form.get("experiment_objective"),
+    ]
+    parts = [str(c).strip() for c in candidates if c and str(c).strip()]
+    return "\n".join(parts) if parts else (form.get("research_title") or "")
+
+
+async def _ensure_back_side_sections(
+    form_data: Dict[str, Any],
+    lab_defaults: Dict[str, Any],
+    llm_client: Optional[LLMClient],
+) -> Dict[str, Any]:
+    """
+    同意書裏面「研究の概要について」の各項目を、未入力ならLLMで自動補完する。
+    すでに値があるフィールドは上書きしない。
+    """
+    form = dict(form_data)
+
+    # ---- 1) 記述系 5 項目: 空のものをまとめて LLM 生成 ----
+    missing_fields = [f for f in _AI_TEXT_FIELDS if _is_blank(form.get(f))]
+
+    if missing_fields:
+        ai_generated: Dict[str, str] = {}
+        if llm_client is not None:
+            try:
+                logger.info(f"裏面の未入力セクションを LLM で補完: {missing_fields}")
+                ai_generated = await generate_research_plan_sections(
+                    research_title=form.get("research_title") or "本研究",
+                    brief_description=_brief_description_from_form(form),
+                    research_field=form.get("research_field") or "ヒューマンインタフェース",
+                    llm_client=llm_client,
+                )
+            except Exception as e:
+                logger.warning(
+                    f"LLM による裏面セクション自動生成に失敗、フォールバック文言を使用: "
+                    f"{type(e).__name__}: {e}"
+                )
+                ai_generated = {}
+        else:
+            logger.info("LLM クライアント未設定。裏面セクションはフォールバック文言で補完")
+
+        for field in missing_fields:
+            text = (ai_generated.get(field) or "").strip()
+            if not text:
+                text = _FALLBACK_PLACEHOLDERS[field]
+            form[field] = text
+
+    # ---- 2) 所要時間: 未入力なら 60 分 ----
+    if _is_blank(form.get("duration_minutes")):
+        form["duration_minutes"] = 60
+
+    # ---- 3) 謝礼: 未入力なら lab_defaults / 既定値で補完 ----
+    reward_defaults = (lab_defaults or {}).get("reward_defaults", {}) or {}
+    if _is_blank(form.get("reward_amount")):
+        form["reward_amount"] = (
+            reward_defaults.get("default_amount")
+            or _estimate_reward_amount(form.get("duration_minutes"))
+        )
+    if _is_blank(form.get("reward_type")):
+        form["reward_type"] = (
+            reward_defaults.get("default_type")
+            or "Amazonギフトカード（Eメールタイプ）"
+        )
+
+    return form

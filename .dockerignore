@@ -1,0 +1,48 @@
+# Source control
+.git
+.gitignore
+.gitattributes
+
+# Python build artifacts
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+backend/venv/
+backend/.venv/
+backend/build/
+backend/dist/
+backend/pyinstaller.log
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Local data / outputs (永続ボリュームから供給する)
+backend/output/
+backend/sessions/
+backend/settings.json
+backend/lab_defaults.json
+backend/.env
+output/
+sessions/
+settings.json
+lab_defaults.json
+
+# Desktop wrappers (Web イメージには不要)
+electron/
+src-tauri/
+**/electron/
+
+# Sample / docs / dev artifacts
+sample/
+docs/
+scripts/
+*.log
+*.docx
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

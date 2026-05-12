@@ -15,17 +15,26 @@ from typing import Dict, Any, AsyncGenerator, List, Optional
 from app.services.orchestrator import DocumentOrchestrator, DocumentType, OrchestrationResult
 from app.services.llm_client import create_llm_client
 from app.services.lab_defaults_manager import load_lab_defaults
+from app.services.official_document_service import (
+    default_official_document_types,
+    is_official_document_type,
+    render_official_document,
+)
+from app.services.preset_manager import load_preset_bundle
+from app.services.form_context_builder import build_generation_context
+from app.services.context_text_enricher import enrich_generation_context_with_llm, flatten_context_for_llm_form_data
+from app.services.generation_validator import error_issues, issue_payload, validate_generation_context
 from app.models.session import Session, SessionStatus, StepStatus
 from app.utils.sse import sse_progress, sse_result, sse_error
-from app.config import app_config
+from app.config import app_config, load_user_settings
 from app.logger import get_logger
 
 logger = get_logger(__name__)
 
 router = APIRouter()
 
-# セッション保存ディレクトリ
-SESSIONS_DIR = Path(__file__).parent.parent.parent.resolve() / "sessions"
+# セッション保存ディレクトリ (ETHICS_DATA_DIR/sessions)
+SESSIONS_DIR = app_config.sessions_dir
 
 
 class GenerateStreamRequest(BaseModel):
@@ -144,10 +153,7 @@ async def generate_documents_stream(
             
             # 書類タイプを決定
             document_types = [
-                DocumentType.APPLICATION_FORM,
                 DocumentType.IMPLEMENTATION_PLAN,
-                DocumentType.CONSENT_FORM,
-                DocumentType.CONSENT_WITHDRAWAL,
                 DocumentType.EXPLANATION,
             ]
             if request.include_questionnaire:
@@ -163,6 +169,36 @@ async def generate_documents_stream(
             merged_form_data = {**request.form_data}
             if request.app_config:
                 merged_form_data['app_config'] = request.app_config
+
+            settings = load_user_settings(app_config)
+            preset_bundle = load_preset_bundle(app_config)
+            generation_context = build_generation_context(
+                form_data=merged_form_data,
+                settings=settings,
+                preset_bundle=preset_bundle,
+            )
+            generation_context = await enrich_generation_context_with_llm(generation_context, llm_client)
+            session.steps.generate.preset_snapshot = generation_context.get("meta", {}).get("preset_snapshot", {})
+            session.steps.generate.context_snapshot = generation_context
+            session.save(SESSIONS_DIR)
+            validation_issues = validate_generation_context(generation_context)
+            validation_errors = error_issues(validation_issues)
+            if validation_errors:
+                session.steps.generate.status = StepStatus.ERROR
+                session.steps.generate.error = "入力不足があります"
+                session.save(SESSIONS_DIR)
+                yield sse_error(
+                    "入力不足があるため、提出用DOCXは生成しません。",
+                    {"issues": issue_payload(validation_issues)},
+                )
+                return
+            merged_form_data["_generation_context"] = generation_context
+            official_context = generation_context
+            llm_form_data = flatten_context_for_llm_form_data(
+                {key: value for key, value in merged_form_data.items() if key != "_generation_context"},
+                generation_context,
+            )
+            document_types = [DocumentType(doc_type) for doc_type in default_official_document_types(official_context)] + document_types
             
             # 各書類を個別に生成（進捗通知付き）
             orchestrator = DocumentOrchestrator(
@@ -191,16 +227,13 @@ async def generate_documents_stream(
                 )
                 
                 try:
-                    if doc_type in [DocumentType.CONSENT_FORM, DocumentType.CONSENT_WITHDRAWAL]:
+                    if is_official_document_type(doc_type.value):
                         # テンプレートコピー
-                        if doc_type == DocumentType.CONSENT_FORM:
-                            orchestrator._copy_template("03_同意書_template.docx", "03_同意書.docx")
-                        else:
-                            orchestrator._copy_template("04_同意撤回書_template.docx", "04_同意撤回書.docx")
+                        render_official_document(doc_type.value, official_context, output_dir)
                         generated.append(doc_type.value)
                     else:
                         # LLM生成
-                        await orchestrator._generate_single_document(doc_type, merged_form_data)
+                        await orchestrator._generate_single_document(doc_type, llm_form_data)
                         generated.append(doc_type.value)
                     
                     # 生成完了通知
@@ -290,6 +323,7 @@ async def generate_documents_stream(
             
             yield sse_result({
                 "session_id": session_id,
+                "sessionId": session_id,
                 "status": "completed" if len(errors) == 0 else "partial",
                 "documents_generated": generated,
                 "errors": errors,
@@ -342,6 +376,8 @@ def _get_doc_name(doc_type: DocumentType) -> str:
         DocumentType.IMPLEMENTATION_PLAN: "実施計画書",
         DocumentType.CONSENT_FORM: "同意書",
         DocumentType.CONSENT_WITHDRAWAL: "同意撤回書",
+        DocumentType.HONORARIUM_RATIONALE: "謝金単価の根拠",
+        DocumentType.PARTICIPANT_LIST: "実験参加者リスト",
         DocumentType.EXPLANATION: "参加者説明書",
         DocumentType.PRE_QUESTIONNAIRE: "事前アンケート",
         DocumentType.POST_QUESTIONNAIRE: "事後アンケート",

@@ -31,9 +31,12 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             ext: ''
-          - os: macos-13
-            target: x86_64-apple-darwin
-            ext: ''
+          # macOS Intel (macos-13) は free tier の runner 在庫が薄く、
+          # しばしば数時間キュー待ちになるためデフォルト matrix から除外。
+          # 必要な場合は下記を有効化して再リリースしてください。
+          # - os: macos-13
+          #   target: x86_64-apple-darwin
+          #   ext: ''
     runs-on: ${{ matrix.os }}
 
     steps:

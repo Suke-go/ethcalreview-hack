@@ -5,7 +5,11 @@ EthicalReviewHacker は **同一コードベースから 2 通りの配布**が�
 | 配布形態 | 用途 | 必要ツール |
 |---|---|---|
 | **Web 配信** | 研究室内に常時稼働の URL を 1 つ持つ | Docker + Fly.io (無料枠あり) |
-| **Tauri デスクトップ** | 各端末にインストールしてオフライン利用 | Rust + Node + Python + (mac の場合) Apple Developer 証明書 |
+| **Tauri デスクトップ** | 各端末にインストールしてオフライン利用 | Rust + Node + Python |
+
+> CI 配布対象は **Windows x64** と **macOS Apple Silicon (M1+)** の 2 つです。
+> macOS Intel 版は free tier の runner 在庫が薄いため自動ビルドから外しています。
+> Intel Mac で動かす場合はソースから `bash scripts/stage-sidecar.sh && npm --prefix frontend exec tauri build` してください。
 
 ---
 

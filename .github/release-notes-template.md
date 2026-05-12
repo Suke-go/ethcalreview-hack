@@ -3,8 +3,9 @@
 | OS | ファイル |
 |---|---|
 | Windows x64 | `EthicalReviewHacker_*_x64_en-US.msi` または `*_x64-setup.exe` |
-| macOS Apple Silicon (M1/M2/M3/M4) | `EthicalReviewHacker_*_aarch64.dmg` |
-| macOS Intel | `EthicalReviewHacker_*_x64.dmg` |
+| macOS (Apple Silicon: M1/M2/M3/M4) | `EthicalReviewHacker_*_aarch64.dmg` |
+
+> macOS Intel 版はバイナリ配布していません。Intel Mac で動かす場合はソースから `bash scripts/stage-sidecar.sh && npm --prefix frontend exec tauri build` をご利用ください。
 
 ## ⚠️ macOS をお使いの方へ
 

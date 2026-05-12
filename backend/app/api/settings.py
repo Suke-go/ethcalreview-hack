@@ -5,8 +5,9 @@ import os
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Optional
 from app.config import UserSettings, app_config, load_user_settings, save_user_settings
+from app.services.preset_manager import load_preset_bundle, save_preset_collection
 
 router = APIRouter()
 
@@ -29,6 +30,10 @@ class EnvUpdateRequest(BaseModel):
     default_provider: Optional[str] = None
 
 
+class PresetCollectionUpdateRequest(BaseModel):
+    items: list[dict[str, Any]]
+
+
 @router.get("", response_model=UserSettings)
 async def get_settings():
     """デフォルト設定を取得"""
@@ -40,6 +45,21 @@ async def update_settings(settings: UserSettings):
     """デフォルト設定を更新"""
     save_user_settings(settings, app_config)
     return settings
+
+
+@router.get("/presets")
+async def get_presets():
+    bundle = load_preset_bundle(app_config)
+    return bundle.model_dump()
+
+
+@router.put("/presets/{kind}")
+async def update_presets(kind: str, request: PresetCollectionUpdateRequest):
+    try:
+        saved = save_preset_collection(kind, request.items, app_config)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"kind": kind, "items": [item.model_dump() for item in saved]}
 
 
 @router.get("/env-status", response_model=EnvStatus)

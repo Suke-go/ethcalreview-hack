@@ -1,389 +1,426 @@
-"""
-アンケート生成サービス
+from __future__ import annotations
 
-実験内容に応じてLLMが質問項目を提案し、アンケートを生成します。
-事前アンケート・事後アンケートの両方に対応。
-"""
+import json
+from pathlib import Path
+from typing import Any, Literal
 
 from docx import Document
-from docx.shared import Pt, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from pathlib import Path
-from typing import Dict, Any, List, Literal
-from pydantic import BaseModel
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+from pydantic import BaseModel, Field
 
-from app.services.llm_client import LLMClient
 from app.logger import get_logger
+from app.services.llm_client import LLMClient
+
 
 logger = get_logger(__name__)
 
-
-class QuestionItem(BaseModel):
-    """質問項目"""
-    text: str
-    type: Literal["likert", "text", "choice", "number"]
-    scale: int = 5  # リカート尺度の場合
-    options: List[str] = []  # 選択式の場合
-    labels: List[str] = []  # リカート尺度のラベル
+ResponseType = Literal["single_choice", "multiple_choice", "likert", "free_text", "numeric"]
+TimingType = Literal["pre", "per_stimulus", "post_condition", "post_experiment"]
 
 
-PRE_QUESTIONNAIRE_PROMPT = """
-あなたは心理学・人間工学の研究者で、アンケート設計の専門家です。
-以下の研究内容を深く理解し、この研究に特化した事前アンケートを設計してください。
+class ScaleSpec(BaseModel):
+    min: int = 1
+    max: int = 7
+    min_label: str = "全くそう思わない"
+    max_label: str = "非常にそう思う"
 
-【研究情報】
-研究タイトル: {research_title}
-研究目的: {research_purpose}
-研究方法: {research_method}
-対象者: {target_participants}
-使用機器: {devices}
-想定されるリスク: {risks}
 
-【★★★ 重要：質問文の書き方 ★★★】
-- 専門用語・テクニカルタームは絶対に使用しない
-- 中学生でも理解できるやさしい日本語で書く
-- 難しい漢字やカタカナ語は避ける
-- 1文は短く、明確に書く
+class SurveyItem(BaseModel):
+    item_id: str
+    question: str
+    construct: str
+    response_type: ResponseType
+    options: list[str] = Field(default_factory=list)
+    scale: ScaleSpec | None = None
+    required: bool = True
 
-【事前アンケート設計の原則】
-1. デモグラフィック情報
-   - 年齢、性別、利き手など基本情報
-   - 研究に関連する属性（例：VR経験、運動習慣など）
 
-2. 除外基準の確認
-   - 健康状態（研究のリスクに関連するもの）
-   - 過去の経験（研究内容に影響を与えるもの）
-   - 例：VR実験なら「VR酔いの経験」、聴覚実験なら「聴力の問題」
+class QuestionnaireBlock(BaseModel):
+    block_id: str
+    title: str
+    timing: TimingType
+    items: list[SurveyItem] = Field(default_factory=list)
 
-3. ベースライン測定
-   - 研究の測定項目に関連する事前状態
-   - 例：疲労度、気分、身体状態など
 
-【この研究に特化した質問のポイント】
-- {research_method}に関連する経験や適性
-- {devices}を使用した経験
-- {risks}に関連する健康状態の確認
+class QuestionnaireSpec(BaseModel):
+    title: str
+    description: str
+    blocks: list[QuestionnaireBlock] = Field(default_factory=list)
 
-【出力形式】
-各質問を以下の形式で出力してください：
-- Q1: [質問文] (type: likert/text/choice/number)
-- Q2: [質問文] (type: likert/text/choice/number)
-...
 
-この研究に最適化された6-10問を提案してください。
-汎用的な質問ではなく、この研究でしか使わないような具体的な質問を含めてください。
+QUESTIONNAIRE_SYSTEM_INSTRUCTION = """
+あなたは研究倫理申請に添付するアンケート用紙を設計する専門家です。
+あなたの仕事は、研究目的・実験条件・評価指標に対応した質問項目をJSONで作ることです。
+
+制約:
+- docxのレイアウトは固定処理が担当するため、本文と質問項目だけを出力してください。
+- ユーザー入力をそのまま長文コピーしないでください。
+- 刺激内容が未確定の理解確認問題は、刺激ごとに差し替えられるテンプレート質問として作ってください。
+- NASA-TLXなど既存尺度の完全転載は避け、倫理申請用の簡易主観評価項目として作ってください。
+- 個人を過度に識別する質問は避けてください。
+- 出力はJSONのみです。
 """
 
 
-POST_QUESTIONNAIRE_PROMPT = """
-あなたは心理学・人間工学の研究者で、アンケート設計の専門家です。
-以下の研究内容を深く理解し、この研究に特化した事後アンケートを設計してください。
+def _as_text(value: Any) -> str:
+    if isinstance(value, list):
+        return "、".join(str(item) for item in value if str(item).strip())
+    return str(value or "")
 
-【研究情報】
-研究タイトル: {research_title}
-研究目的: {research_purpose}
-研究方法: {research_method}
-所要時間: 約{duration}分
-使用機器: {devices}
-想定されるリスク: {risks}
 
-【★★★ 重要：質問文の書き方 ★★★】
-- 専門用語・テクニカルタームは絶対に使用しない
-- 中学生でも理解できるやさしい日本語で書く
-- 難しい漢字やカタカナ語は避ける
-- 1文は短く、明確に書く
+def _infer_conditions(form_data: dict[str, Any]) -> list[str]:
+    explicit = form_data.get("conditions") or form_data.get("condition_names")
+    if isinstance(explicit, list) and explicit:
+        return [str(item) for item in explicit if str(item).strip()]
 
-【事後アンケート設計の原則】
-1. 実験体験の評価
-   - 実験内容の理解度
-   - 指示の明確さ
-   - 実験環境の快適さ
+    source = " ".join(
+        [
+            _as_text(form_data.get("title") or form_data.get("research_title")),
+            _as_text(form_data.get("methodology") or form_data.get("research_method")),
+            _as_text(form_data.get("procedures")),
+        ]
+    )
+    subtitle_keywords = ["字幕", "Dynamik", "韻律", "講演", "強調語", "音声劣化"]
+    if any(keyword in source for keyword in subtitle_keywords):
+        return ["無字幕", "通常字幕", "Dynamik", "提案手法"]
+    return []
 
-2. 主観的評価（研究目的に関連）
-   - 研究で測定したい主観的な感覚や印象
-   - 例：VR実験なら「没入感」「リアリティ」
-   - 例：音声実験なら「聞き取りやすさ」「自然さ」
 
-3. 負担・不快感の確認
-   - {risks}に関連する実際の体験
-   - 疲労度、不快感、ストレス
+def _context_for_prompt(form_data: dict[str, Any], questionnaire_type: str) -> dict[str, Any]:
+    return {
+        "questionnaire_type": questionnaire_type,
+        "research_title": form_data.get("title") or form_data.get("research_title") or "",
+        "purpose": form_data.get("purpose") or form_data.get("research_purpose") or "",
+        "method": form_data.get("methodology") or form_data.get("research_method") or "",
+        "target_participants": form_data.get("targetDescription") or form_data.get("target_participants") or "",
+        "duration_minutes": form_data.get("duration") or form_data.get("duration_minutes") or "",
+        "conditions": _infer_conditions(form_data),
+        "devices": form_data.get("devices", []),
+        "risks": form_data.get("risks", []),
+        "data_types": form_data.get("dataTypes") or form_data.get("data_types") or [],
+    }
 
-4. 自由記述
-   - 気づいた点、改善提案
 
-【この研究に特化した質問のポイント】
-- {research_purpose}の達成度を測る主観評価
-- {research_method}の体験に関する具体的な感想
-- {devices}使用時の感覚（違和感、操作性など）
-
-【出力形式】
-各質問を以下の形式で出力してください：
-- Q1: [質問文] (type: likert/text/choice/number)
-- Q2: [質問文] (type: likert/text/choice/number)
-...
-
-この研究の目的に直結する主観評価質問を中心に、6-10問を提案してください。
-リカート尺度（5段階）と自由記述を適切に組み合わせてください。
+def _questionnaire_prompt(form_data: dict[str, Any], questionnaire_type: Literal["pre", "post"]) -> str:
+    context = _context_for_prompt(form_data, questionnaire_type)
+    if questionnaire_type == "pre":
+        intent = """
+事前アンケートを作成してください。
+含めるべき観点:
+- 参加条件の確認
+- 年齢区分など最小限の属性
+- 使用言語・字幕利用経験・講演視聴経験など研究に関係する背景
+- 聴覚・視覚・体調など、課題遂行やリスクに関係する自己申告
 """
+    else:
+        intent = """
+実験中または実験後に使うアンケートを作成してください。
+含めるべき観点:
+- 各刺激後の理解確認
+- 話者が強調した内容の同定
+- 話者の態度・意図の推定
+- 字幕条件ごとの読みやすさ・邪魔さ・自然さ
+- 簡易的な主観的認知負荷
+- 実験全体の比較評価と自由記述
+"""
+
+    return f"""
+以下の研究計画に基づいて、研究倫理申請に添付できるアンケート用紙案を生成してください。
+
+{intent}
+
+研究計画コンテキスト:
+{json.dumps(context, ensure_ascii=False, indent=2)}
+
+出力JSON:
+{{
+  "questionnaire": {{
+    "title": "string",
+    "description": "string",
+    "blocks": [
+      {{
+        "block_id": "string",
+        "title": "string",
+        "timing": "pre | per_stimulus | post_condition | post_experiment",
+        "items": [
+          {{
+            "item_id": "string",
+            "question": "string",
+            "construct": "この質問が測るもの",
+            "response_type": "single_choice | multiple_choice | likert | free_text | numeric",
+            "options": ["string"],
+            "scale": {{
+              "min": 1,
+              "max": 7,
+              "min_label": "string",
+              "max_label": "string"
+            }},
+            "required": true
+          }}
+        ]
+      }}
+    ]
+  }}
+}}
+"""
+
+
+def _fallback_pre_questionnaire() -> QuestionnaireSpec:
+    return QuestionnaireSpec(
+        title="事前アンケート",
+        description="研究参加前に、参加条件と字幕・講演理解に関係する背景を確認します。",
+        blocks=[
+            QuestionnaireBlock(
+                block_id="pre_background",
+                title="参加前確認",
+                timing="pre",
+                items=[
+                    SurveyItem(
+                        item_id="pre_age",
+                        question="年齢区分を選択してください。",
+                        construct="参加条件",
+                        response_type="single_choice",
+                        options=["18-19歳", "20-29歳", "30-39歳", "40歳以上", "回答しない"],
+                    ),
+                    SurveyItem(
+                        item_id="pre_language",
+                        question="日本語の文章を読むことに不安はありますか。",
+                        construct="言語理解",
+                        response_type="likert",
+                        scale=ScaleSpec(min_label="全く不安はない", max_label="非常に不安がある"),
+                    ),
+                    SurveyItem(
+                        item_id="pre_hearing",
+                        question="音声を聞き取ることに支障がありますか。",
+                        construct="聴覚に関する自己申告",
+                        response_type="single_choice",
+                        options=["支障はない", "少し支障がある", "大きな支障がある", "回答しない"],
+                    ),
+                    SurveyItem(
+                        item_id="pre_subtitle_use",
+                        question="動画視聴時に字幕を使う頻度を選択してください。",
+                        construct="字幕利用経験",
+                        response_type="single_choice",
+                        options=["ほとんど使わない", "ときどき使う", "よく使う", "ほぼ常に使う"],
+                    ),
+                    SurveyItem(
+                        item_id="pre_lecture_experience",
+                        question="TEDなどの短い講演動画を視聴する頻度を選択してください。",
+                        construct="講演視聴経験",
+                        response_type="single_choice",
+                        options=["ほとんどない", "年に数回", "月に数回", "週に1回以上"],
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+def _fallback_post_questionnaire(conditions: list[str]) -> QuestionnaireSpec:
+    condition_text = "、".join(conditions) if conditions else "各字幕条件"
+    return QuestionnaireSpec(
+        title="実験後アンケート",
+        description=f"{condition_text}での視聴体験、理解、負担感を確認します。",
+        blocks=[
+            QuestionnaireBlock(
+                block_id="per_stimulus",
+                title="各動画視聴後の質問",
+                timing="per_stimulus",
+                items=[
+                    SurveyItem(
+                        item_id="stim_comprehension",
+                        question="この動画の主な内容を理解できましたか。",
+                        construct="内容理解",
+                        response_type="likert",
+                        scale=ScaleSpec(min_label="全く理解できなかった", max_label="よく理解できた"),
+                    ),
+                    SurveyItem(
+                        item_id="stim_claim",
+                        question="話者が最も伝えようとしていた内容を選択してください。",
+                        construct="主張理解",
+                        response_type="single_choice",
+                        options=["選択肢A", "選択肢B", "選択肢C", "わからない"],
+                    ),
+                    SurveyItem(
+                        item_id="stim_emphasis",
+                        question="話者が強調していたと思う語句を記入してください。",
+                        construct="強調語同定",
+                        response_type="free_text",
+                    ),
+                    SurveyItem(
+                        item_id="stim_intent",
+                        question="話者の態度や意図は分かりやすかったですか。",
+                        construct="態度・意図推定",
+                        response_type="likert",
+                        scale=ScaleSpec(min_label="全く分かりにくかった", max_label="非常に分かりやすかった"),
+                    ),
+                    SurveyItem(
+                        item_id="stim_load",
+                        question="この動画を見るときに、頭を使う負担を感じましたか。",
+                        construct="主観的認知負荷",
+                        response_type="likert",
+                        scale=ScaleSpec(min_label="全く負担を感じなかった", max_label="非常に負担を感じた"),
+                    ),
+                ],
+            ),
+            QuestionnaireBlock(
+                block_id="post_comparison",
+                title="実験全体について",
+                timing="post_experiment",
+                items=[
+                    SurveyItem(
+                        item_id="post_best_condition",
+                        question="最も内容を理解しやすかった字幕条件を選択してください。",
+                        construct="条件比較",
+                        response_type="single_choice",
+                        options=conditions or ["条件A", "条件B", "条件C", "条件D"],
+                    ),
+                    SurveyItem(
+                        item_id="post_distraction",
+                        question="字幕表示が邪魔に感じられた条件があれば選択してください。",
+                        construct="字幕の負担",
+                        response_type="multiple_choice",
+                        options=(conditions or ["条件A", "条件B", "条件C", "条件D"]) + ["特になし"],
+                    ),
+                    SurveyItem(
+                        item_id="post_free",
+                        question="字幕の見やすさや分かりやすさについて、気づいた点を記入してください。",
+                        construct="自由記述",
+                        response_type="free_text",
+                    ),
+                ],
+            ),
+        ],
+    )
 
 
 class QuestionnaireGenerator:
-    """アンケート生成器"""
-    
-    def __init__(self, llm_client: LLMClient, lab_defaults: Dict[str, Any]):
+    def __init__(self, llm_client: LLMClient, lab_defaults: dict[str, Any]):
         self.llm = llm_client
         self.defaults = lab_defaults
-    
-    async def generate_pre_questionnaire(
+
+    async def generate_pre_questionnaire(self, form_data: dict[str, Any], output_dir: Path) -> Path:
+        spec = await self._generate_spec(form_data, "pre")
+        return self._save_outputs(spec, output_dir, "事前アンケート")
+
+    async def generate_post_questionnaire(self, form_data: dict[str, Any], output_dir: Path) -> Path:
+        spec = await self._generate_spec(form_data, "post")
+        return self._save_outputs(spec, output_dir, "実験後アンケート")
+
+    async def _generate_spec(
         self,
-        form_data: Dict[str, Any],
-        output_dir: Path
-    ) -> Path:
-        """事前アンケートを生成"""
-        logger.info("事前アンケート生成 開始")
-        
-        questions = await self._generate_questions(form_data, "pre")
-        output_path = self._generate_docx(
-            questions=questions,
-            title="事前アンケート",
-            research_title=form_data.get("title", form_data.get("research_title", "")),
-            output_dir=output_dir,
-            filename="事前アンケート.docx"
-        )
-        
-        logger.info(f"事前アンケート生成 完了: {output_path.name}")
-        return output_path
-    
-    async def generate_post_questionnaire(
-        self,
-        form_data: Dict[str, Any],
-        output_dir: Path
-    ) -> Path:
-        """事後アンケートを生成"""
-        logger.info("事後アンケート生成 開始")
-        
-        questions = await self._generate_questions(form_data, "post")
-        output_path = self._generate_docx(
-            questions=questions,
-            title="事後アンケート",
-            research_title=form_data.get("title", form_data.get("research_title", "")),
-            output_dir=output_dir,
-            filename="事後アンケート.docx"
-        )
-        
-        logger.info(f"事後アンケート生成 完了: {output_path.name}")
-        return output_path
-    
-    async def _generate_questions(
-        self,
-        form_data: Dict[str, Any],
-        questionnaire_type: Literal["pre", "post"]
-    ) -> List[QuestionItem]:
-        """LLMで質問項目を生成"""
-        
-        context = {
-            "research_title": form_data.get("title", form_data.get("research_title", "")),
-            "research_purpose": form_data.get("purpose", form_data.get("research_purpose", "")),
-            "research_method": form_data.get("methodology", form_data.get("research_method", "")),
-            "target_participants": form_data.get("targetDescription", ""),
-            "duration": form_data.get("duration", form_data.get("duration_minutes", 60)),
-            "devices": ", ".join(form_data.get("devices", [])) if form_data.get("devices") else "特になし",
-            "risks": ", ".join(form_data.get("risks", [])) if form_data.get("risks") else "特になし",
-        }
-        
-        if questionnaire_type == "pre":
-            prompt = PRE_QUESTIONNAIRE_PROMPT.format(**context)
-        else:
-            prompt = POST_QUESTIONNAIRE_PROMPT.format(**context)
-        
+        form_data: dict[str, Any],
+        questionnaire_type: Literal["pre", "post"],
+    ) -> QuestionnaireSpec:
         try:
-            response = await self.llm.generate_content_async(
-                prompt=prompt,
-                system_instruction=(
-                    "あなたは研究者向けアンケート設計の専門家です。"
-                    "実験内容に適した質問項目を提案してください。"
-                )
+            generated = await self.llm.generate_json(
+                _questionnaire_prompt(form_data, questionnaire_type),
+                QUESTIONNAIRE_SYSTEM_INSTRUCTION,
             )
-            
-            return self._parse_questions(response)
-            
-        except Exception as e:
-            logger.error(f"質問生成エラー: {e}")
-            return self._get_default_questions(questionnaire_type)
-    
-    def _parse_questions(self, response: str) -> List[QuestionItem]:
-        """LLMレスポンスをパース"""
-        questions = []
-        lines = response.strip().split("\n")
-        
-        for line in lines:
-            line = line.strip()
-            if not line or not line.startswith("-"):
-                continue
-            
-            # "- Q1: [質問文] (type: xxx)" 形式をパース
-            try:
-                # Q番号を除去
-                if ": " in line:
-                    _, rest = line.split(": ", 1)
-                else:
-                    rest = line[2:]  # "- " を除去
-                
-                # タイプを抽出
-                q_type = "text"
-                if "(type:" in rest:
-                    text_part, type_part = rest.rsplit("(type:", 1)
-                    q_type = type_part.replace(")", "").strip()
-                    text = text_part.strip()
-                else:
-                    text = rest.strip()
-                
-                # Q番号が残っていれば除去
-                if text.startswith("Q") and text[1].isdigit():
-                    text = text.split(":", 1)[-1].strip() if ":" in text else text[3:].strip()
-                
-                questions.append(QuestionItem(
-                    text=text,
-                    type=q_type if q_type in ["likert", "text", "choice", "number"] else "text"
-                ))
-                
-            except Exception:
-                continue
-        
-        return questions if questions else self._get_default_questions("post")
-    
-    def _get_default_questions(self, questionnaire_type: str) -> List[QuestionItem]:
-        """デフォルトの質問項目"""
+            payload = generated.get("questionnaire", generated)
+            spec = QuestionnaireSpec.model_validate(payload)
+            if spec.blocks and any(block.items for block in spec.blocks):
+                return spec
+        except Exception as exc:
+            logger.warning(f"アンケートJSON生成に失敗しました。fallbackを使用します: {exc}")
+
         if questionnaire_type == "pre":
-            return [
-                QuestionItem(text="年齢を教えてください。", type="number"),
-                QuestionItem(text="性別を教えてください。", type="choice", options=["男性", "女性", "その他", "回答しない"]),
-                QuestionItem(text="利き手を教えてください。", type="choice", options=["右", "左", "両利き"]),
-                QuestionItem(text="現在、健康上の問題はありますか？", type="text"),
-                QuestionItem(text="本日の体調を教えてください。", type="likert", labels=["非常に悪い", "", "普通", "", "非常に良い"]),
-            ]
-        else:
-            return [
-                QuestionItem(text="実験内容は分かりやすかったですか？", type="likert", labels=["全くそう思わない", "", "どちらでもない", "", "非常にそう思う"]),
-                QuestionItem(text="実験中に不快に感じた点はありましたか？", type="likert", labels=["全くなかった", "", "どちらでもない", "", "非常にあった"]),
-                QuestionItem(text="疲労を感じましたか？", type="likert", labels=["全く感じなかった", "", "どちらでもない", "", "非常に感じた"]),
-                QuestionItem(text="不快に感じた点があれば具体的に教えてください。", type="text"),
-                QuestionItem(text="改善点やご意見があれば教えてください。", type="text"),
-            ]
-    
-    def _generate_docx(
-        self,
-        questions: List[QuestionItem],
-        title: str,
-        research_title: str,
-        output_dir: Path,
-        filename: str
-    ) -> Path:
-        """アンケートDOCXを生成"""
+            return _fallback_pre_questionnaire()
+        return _fallback_post_questionnaire(_infer_conditions(form_data))
+
+    def _save_outputs(self, spec: QuestionnaireSpec, output_dir: Path, basename: str) -> Path:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / f"{basename}.json"
+        json_path.write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+
+        docx_path = output_dir / f"{basename}.docx"
+        self._generate_docx(spec, docx_path)
+        logger.info(f"{basename}生成完了: {docx_path.name}, {json_path.name}")
+        return docx_path
+
+    def _generate_docx(self, spec: QuestionnaireSpec, output_path: Path) -> None:
         doc = Document()
-        
-        # スタイル設定
-        style = doc.styles['Normal']
-        style.font.name = 'Yu Gothic'
-        style.font.size = Pt(11)
-        
-        # タイトル
+        style = doc.styles["Normal"]
+        style.font.name = "Yu Gothic"
+        style.font.size = Pt(10.5)
+
         title_para = doc.add_paragraph()
-        title_run = title_para.add_run(title)
-        title_run.bold = True
-        title_run.font.size = Pt(14)
+        run = title_para.add_run(spec.title)
+        run.bold = True
+        run.font.size = Pt(14)
         title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        # 研究タイトル
-        subtitle = doc.add_paragraph()
-        subtitle.add_run(f"研究課題名: {research_title}")
-        subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        doc.add_paragraph()
-        
-        # 説明文
-        intro = doc.add_paragraph()
-        intro.add_run("以下の質問にお答えください。回答に正解・不正解はありません。")
-        
-        doc.add_paragraph()
-        
-        # 質問項目
-        for i, q in enumerate(questions, 1):
-            # 質問文
-            q_para = doc.add_paragraph()
-            q_para.add_run(f"Q{i}. {q.text}").bold = True
-            
-            if q.type == "likert":
-                # リカート尺度
-                self._add_likert_scale(doc, q.scale, q.labels)
-            elif q.type == "choice":
-                # 選択式
-                for opt in q.options:
-                    doc.add_paragraph(f"　□ {opt}")
-            elif q.type == "number":
-                # 数値入力
-                doc.add_paragraph("　回答: _______________")
-            else:
-                # 自由記述
-                doc.add_paragraph("　")
-                doc.add_paragraph("　" + "_" * 50)
-                doc.add_paragraph("　" + "_" * 50)
-            
-            doc.add_paragraph()
-        
-        # 保存
-        output_path = output_dir / filename
+
+        if spec.description:
+            doc.add_paragraph(spec.description)
+        doc.add_paragraph("回答に正解・不正解はありません。普段どおりに回答してください。")
+
+        question_number = 1
+        for block in spec.blocks:
+            heading = doc.add_paragraph()
+            heading_run = heading.add_run(block.title)
+            heading_run.bold = True
+            heading_run.font.size = Pt(12)
+            if block.timing == "per_stimulus":
+                doc.add_paragraph("このブロックは、各動画または各条件の後に繰り返して使用します。")
+
+            for item in block.items:
+                paragraph = doc.add_paragraph()
+                paragraph.add_run(f"Q{question_number}. {item.question}").bold = True
+                if item.construct:
+                    doc.add_paragraph(f"測定内容: {item.construct}")
+                self._render_response_area(doc, item)
+                doc.add_paragraph()
+                question_number += 1
+
         doc.save(output_path)
-        
-        return output_path
-    
-    def _add_likert_scale(self, doc: Document, scale: int, labels: List[str]):
-        """リカート尺度を追加"""
-        # ラベルが不足している場合は補完
-        if len(labels) < scale:
-            labels = labels + [""] * (scale - len(labels))
-        
-        # テーブル作成
-        table = doc.add_table(rows=2, cols=scale)
+
+    def _render_response_area(self, doc: Document, item: SurveyItem) -> None:
+        if item.response_type == "likert":
+            scale = item.scale or ScaleSpec()
+            self._add_likert_scale(doc, scale)
+        elif item.response_type in {"single_choice", "multiple_choice"}:
+            for option in item.options:
+                doc.add_paragraph(f"　□ {option}")
+        elif item.response_type == "numeric":
+            doc.add_paragraph("　回答: _______________")
+        else:
+            doc.add_paragraph("　" + "_" * 50)
+            doc.add_paragraph("　" + "_" * 50)
+
+    def _add_likert_scale(self, doc: Document, scale: ScaleSpec) -> None:
+        min_value = int(scale.min)
+        max_value = int(scale.max)
+        values = list(range(min_value, max_value + 1))
+        table = doc.add_table(rows=2, cols=len(values))
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        
-        # ラベル行
-        for j in range(scale):
-            cell = table.rows[0].cells[j]
-            if j < len(labels):
-                cell.text = labels[j]
-            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        # 選択肢行
-        for j in range(scale):
-            cell = table.rows[1].cells[j]
-            cell.text = f"□ {j + 1}"
-            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        for index, value in enumerate(values):
+            label = ""
+            if index == 0:
+                label = scale.min_label
+            elif index == len(values) - 1:
+                label = scale.max_label
+            table.rows[0].cells[index].text = label
+            table.rows[0].cells[index].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            table.rows[1].cells[index].text = f"□ {value}"
+            table.rows[1].cells[index].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 
 async def generate_questionnaire(
-    form_data: Dict[str, Any],
+    form_data: dict[str, Any],
     output_dir: Path,
     llm_client: LLMClient,
-    lab_defaults: Dict[str, Any],
-    questionnaire_type: Literal["pre", "post", "both"] = "both"
-) -> List[Path]:
-    """
-    アンケート生成エントリーポイント
-    
-    Returns:
-        List[Path]: 生成されたファイルのリスト
-    """
+    lab_defaults: dict[str, Any],
+    questionnaire_type: Literal["pre", "post", "both"] = "both",
+) -> list[Path]:
     generator = QuestionnaireGenerator(llm_client, lab_defaults)
-    paths = []
-    
-    if questionnaire_type in ["pre", "both"]:
-        pre_path = await generator.generate_pre_questionnaire(form_data, output_dir)
-        paths.append(pre_path)
-    
-    if questionnaire_type in ["post", "both"]:
-        post_path = await generator.generate_post_questionnaire(form_data, output_dir)
-        paths.append(post_path)
-    
+    paths: list[Path] = []
+
+    if questionnaire_type in {"pre", "both"}:
+        paths.append(await generator.generate_pre_questionnaire(form_data, output_dir))
+    if questionnaire_type in {"post", "both"}:
+        paths.append(await generator.generate_post_questionnaire(form_data, output_dir))
+
     return paths

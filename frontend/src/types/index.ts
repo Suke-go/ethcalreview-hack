@@ -64,6 +64,63 @@ export interface Settings {
 
 
 // 研究計画解析リクエスト
+export interface InvestigatorPreset {
+    id: string;
+    label: string;
+    name: string;
+    affiliation: string;
+    position: string;
+    email: string;
+    tel: string;
+    default_rooms: string[];
+    default_budget_ids: string[];
+    default_submission_preset_id: string;
+    enabled: boolean;
+}
+
+export interface BudgetPreset {
+    id: string;
+    label: string;
+    source: string;
+    project_name: string;
+    reward_per_person: number;
+    reward_type: string;
+    hourly_rate: number;
+    enabled: boolean;
+}
+
+export interface RoomPreset {
+    id: string;
+    label: string;
+    rooms: string[];
+    enabled: boolean;
+}
+
+export interface SubmissionPreset {
+    id: string;
+    label: string;
+    recipient: string;
+    committee_name: string;
+    office_name: string;
+    office_tel: string;
+    default_affiliation_label: string;
+    domain_head_candidates?: { name: string; title?: string }[];
+    enabled: boolean;
+}
+
+export interface PresetBundle {
+    investigator_presets: InvestigatorPreset[];
+    budget_presets: BudgetPreset[];
+    room_presets: RoomPreset[];
+    submission_presets: SubmissionPreset[];
+}
+
+export interface ValidationIssue {
+    field: string;
+    message: string;
+    severity: 'error' | 'warning';
+}
+
 export interface AnalyzeRequest {
     researchPlan: string;        // 研究計画テキスト
 }
@@ -89,6 +146,9 @@ export interface AnalysisResult {
 
 // フォーム入力データ
 export interface FormData {
+    research_plan?: string;
+    followupAnswers?: Record<string, string>;
+
     // 基本情報
     title: string;
     principalInvestigator: Investigator;

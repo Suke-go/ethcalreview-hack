@@ -1,6 +1,6 @@
 // frontend/src/components/common/Input.tsx
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useId } from 'react';
 import './Input.css';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -13,7 +13,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ label, error, helpText, leftAddon, rightAddon, className = '', id, ...props }, ref) => {
-        const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+        const generatedId = useId();
+        const inputId = id || `input-${generatedId}`;
 
         return (
             <div className={`input-wrapper ${className}`}>
@@ -51,7 +52,8 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ label, error, helpText, className = '', id, ...props }, ref) => {
-        const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+        const generatedId = useId();
+        const textareaId = id || `textarea-${generatedId}`;
 
         return (
             <div className={`input-wrapper ${className}`}>
@@ -93,7 +95,8 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     ({ label, error, helpText, options, placeholder, className = '', id, ...props }, ref) => {
-        const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
+        const generatedId = useId();
+        const selectId = id || `select-${generatedId}`;
 
         return (
             <div className={`input-wrapper ${className}`}>

@@ -272,16 +272,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             <div className="settings-footer">
-                {/* Electron環境でのみ設定フォルダを開くボタンを表示 */}
-                {typeof window !== 'undefined' && (window as any).electronAPI && (
-                    <Button
-                        variant="secondary"
-                        onClick={() => (window as any).electronAPI.openUserDataFolder()}
-                        style={{ marginRight: 'auto' }}
-                    >
-                        📁 設定フォルダを開く
-                    </Button>
-                )}
                 <Button variant="secondary" onClick={onClose}>
                     キャンセル
                 </Button>

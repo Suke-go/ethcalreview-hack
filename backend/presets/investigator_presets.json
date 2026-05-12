@@ -1,0 +1,22 @@
+[
+  {
+    "id": "zempo_keiichi",
+    "label": "善甫 啓一",
+    "name": "善甫 啓一",
+    "affiliation": "筑波大学システム情報系",
+    "position": "准教授",
+    "email": "zempo@iit.tsukuba.ac.jp",
+    "tel": "029-853-5338",
+    "default_rooms": [
+      "3M211",
+      "3G214"
+    ],
+    "default_budget_ids": [
+      "default_reward"
+    ],
+    "default_submission_preset_id": "systems_information",
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-05-02T00:00:00"
+  }
+]

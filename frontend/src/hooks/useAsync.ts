@@ -133,11 +133,12 @@ export function usePolling<T>(
     useEffect(() => {
         isMountedRef.current = true;
 
-        if (enabled) {
-            start();
-        }
+        const startTimer = enabled ? window.setTimeout(start, 0) : null;
 
         return () => {
+            if (startTimer !== null) {
+                clearTimeout(startTimer);
+            }
             isMountedRef.current = false;
             stop();
         };

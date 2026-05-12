@@ -1,94 +1,94 @@
 {
-    "lab_info": {
-        "name": "〇〇研究室",
-        "pi_name": "山田 太郎",
-        "pi_affiliation": "システム情報系",
-        "pi_position": "准教授",
-        "pi_email": "yamada@example.ac.jp",
-        "pi_phone": "029-853-XXXX",
-        "pi_extension": "XXXX",
-        "lab_room": "3MXXX",
-        "experimental_rooms": [
-            "3GXXX",
-            "3MXXX"
-        ]
-    },
-    "domain_head": {
-        "domain_name": "〇〇工学域",
-        "name": "鈴木 一郎",
-        "title": "先生",
-        "updated_at": "2024-01-01",
-        "editable": true
-    },
-    "funding": {
-        "source": "運営費交付金",
-        "account_number": "1111220000",
-        "pi_name": "山田 太郎"
-    },
-    "application_defaults": {
-        "department": "システム情報系",
-        "recipient": "システム情報系長",
-        "facility_type": "a",
-        "facility_name": "3MXXX",
-        "epidemiology_related": false,
-        "conflict_of_interest": false,
-        "insurance_type": "国立大学法人総合損害保険（国大協保険）",
-        "ethics_guideline": "人を対象とする生命科学・医療系研究に関する倫理指針",
-        "research_category": "臨床研究ではない",
-        "intervention": false,
-        "invasiveness": "ない",
-        "participant_age": "18歳以上",
-        "participant_consent_capable": true,
-        "consent_method": "対象者から文章によるインフォームド・コンセントを得る",
-        "explanation_method": "文章を添えて口頭にて説明する",
-        "data_retention_period": "10年",
-        "anonymization": true,
-        "anonymization_with_key": true,
-        "correspondence_table_method": "外部と切り離されたコンピュータを使用して、外部記録媒体に保存し、鍵をかけて厳重に保管する",
-        "consent_withdrawal_deadline": "実験実施日から一か月",
-        "data_disclosure_to_participant": false,
-        "data_disclosure_to_proxy": false,
-        "research_outcome_public": true,
-        "publication_venues": [
-            "学位論文",
-            "学会発表",
-            "学術論文"
-        ],
-        "identifiable_data_public": false,
-        "reward_type": "謝金単価表における被験者謝金単価（短期雇用と同じ額）を適用、またはそれ以下の単価で打ち切り",
-        "medical_cost_coverage": true,
-        "medical_cost_method": "国大協保険"
-    },
-    "data_management_defaults": {
-        "retention_period": "10年",
-        "storage_location": "研究室(3MXXX)にて管理されたノートパソコン",
-        "manager": "山田 太郎",
-        "management_method": "ノートパソコンの使用を関係者のみとし、結果の解析はネットに接続されない状態で行う。また、暗号化およびパスワード保護を用いることによりデータを保護する。",
-        "disposal_method": "研究対象者からの実験に関するデータの破棄が申請された場合は直ちに研究対象者のデータを破棄する。また、研究成果発表から10年が経過した場合、データの保存しているSSDを初期化し、データの復元をできないようにして処分する。"
-    },
-    "personal_info_defaults": {
-        "collected_info": [
-            "氏名",
-            "電子メール"
-        ],
-        "identifiable_records": false,
-        "human_samples": false
-    },
-    "recruitment_defaults": {
-        "method": "実験参加者の募集は、筑波大学内の掲示板やWeb掲示板への案内文書の掲示、および口頭での案内によって行う。参加は個人の自由意志に基づくものとし、募集者が参加希望者の成績評価等を行う立場にないことを明確にし、同調圧力が生じないよう配慮する。"
-    },
-    "attachments_defaults": {
-        "conflict_of_interest_form": false,
-        "implementation_plan": true,
-        "explanation_document": true,
-        "consent_form": true,
-        "video_consent_form": false,
-        "external_approval": false,
-        "multi_site_plan": false,
-        "role_distribution": false
-    },
-    "ethics_committee": {
-        "name": "システム情報系研究倫理委員会事務局",
-        "phone": "029-853-XXXX"
-    }
+  "lab_info": {
+    "name": "善甫研究室",
+    "pi_name": "善甫 啓一",
+    "pi_affiliation": "筑波大学 システム情報系",
+    "pi_position": "准教授",
+    "pi_email": "zempo@iit.tsukuba.ac.jp",
+    "pi_phone": "029-853-5338",
+    "pi_extension": "5338",
+    "lab_room": "3M211",
+    "experimental_rooms": [
+      "3M211",
+      "3G214"
+    ]
+  },
+  "domain_head": {
+    "domain_name": "システム情報系",
+    "name": "",
+    "title": "系長",
+    "updated_at": "2026-05-02",
+    "editable": true
+  },
+  "funding": {
+    "source": "運営費交付金",
+    "account_number": "",
+    "pi_name": "善甫 啓一"
+  },
+  "application_defaults": {
+    "department": "システム情報系",
+    "recipient": "システム情報系長",
+    "facility_type": "a",
+    "facility_name": "3M211",
+    "epidemiology_related": false,
+    "conflict_of_interest": false,
+    "insurance_type": "国立大学法人総合損害保険",
+    "ethics_guideline": "人を対象とする生命科学・医学系研究に関する倫理指針",
+    "research_category": "臨床研究ではない",
+    "intervention": false,
+    "invasiveness": "なし",
+    "participant_age": "18歳以上",
+    "participant_consent_capable": true,
+    "consent_method": "対象者から文書によるインフォームド・コンセントを得る",
+    "explanation_method": "説明文書を添えて口頭にて説明する",
+    "data_retention_period": "10年",
+    "anonymization": true,
+    "anonymization_with_key": true,
+    "correspondence_table_method": "外部と切り離されたコンピュータを使用し、外部記録媒体に保存して鍵をかけて厳重に保管する",
+    "consent_withdrawal_deadline": "実験実施日から1か月",
+    "data_disclosure_to_participant": false,
+    "data_disclosure_to_proxy": false,
+    "research_outcome_public": true,
+    "publication_venues": [
+      "学位論文",
+      "学会発表",
+      "学術論文"
+    ],
+    "identifiable_data_public": false,
+    "reward_type": "謝金単価表における被験者謝金単価を適用する",
+    "medical_cost_coverage": true,
+    "medical_cost_method": "国立大学法人総合損害保険"
+  },
+  "data_management_defaults": {
+    "retention_period": "10年",
+    "storage_location": "研究室(3M211)にて管理されたノートパソコン",
+    "manager": "善甫 啓一",
+    "management_method": "ノートパソコンの使用を関係者のみに限定し、結果の解析はネットワークに接続されていない状態で行う。また、暗号化およびパスワード保護を用いる。",
+    "disposal_method": "研究対象者から破棄の申請があった場合は直ちに当該データを破棄する。研究成果発表から10年が経過した場合、保存媒体を初期化し、復元できないように処分する。紙媒体はシュレッダーで破棄する。"
+  },
+  "personal_info_defaults": {
+    "collected_info": [
+      "氏名",
+      "電子メール"
+    ],
+    "identifiable_records": false,
+    "human_samples": false
+  },
+  "recruitment_defaults": {
+    "method": "実験参加者の募集は、筑波大学内の掲示板、Web掲示板、案内文書、口頭での案内により行う。参加は個人の自由意思に基づくものとし、募集者が成績評価等を行う立場にならないよう配慮する。"
+  },
+  "attachments_defaults": {
+    "conflict_of_interest_form": false,
+    "implementation_plan": true,
+    "explanation_document": true,
+    "consent_form": true,
+    "video_consent_form": false,
+    "external_approval": false,
+    "multi_site_plan": false,
+    "role_distribution": false
+  },
+  "ethics_committee": {
+    "name": "システム情報系 研究倫理委員会",
+    "phone": "029-853-4989"
+  }
 }

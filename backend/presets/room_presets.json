@@ -1,0 +1,13 @@
+[
+  {
+    "id": "systems_information_default_rooms",
+    "label": "システム情報系 標準実験室",
+    "rooms": [
+      "3M211",
+      "3G214"
+    ],
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-05-02T00:00:00"
+  }
+]

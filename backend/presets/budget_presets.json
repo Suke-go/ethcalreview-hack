@@ -1,0 +1,14 @@
+[
+  {
+    "id": "default_reward",
+    "label": "標準謝金",
+    "source": "(教研)教研-重点-人材養成機能強化経費",
+    "project_name": "",
+    "reward_per_person": 800,
+    "reward_type": "Amazonギフトカード",
+    "hourly_rate": 1000,
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-05-02T00:00:00"
+  }
+]

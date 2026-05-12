@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from './common/Button';
 import './OnboardingTutorial.css';
 
@@ -139,20 +139,3 @@ export const OnboardingTutorial = ({ onComplete, onOpenSettings }: OnboardingTut
 };
 
 // 初回起動かどうかを確認するフック
-export const useOnboarding = () => {
-    const [showOnboarding, setShowOnboarding] = useState(false);
-
-    useEffect(() => {
-        const completed = localStorage.getItem('onboarding_completed');
-        if (!completed) {
-            setShowOnboarding(true);
-        }
-    }, []);
-
-    const resetOnboarding = () => {
-        localStorage.removeItem('onboarding_completed');
-        setShowOnboarding(true);
-    };
-
-    return { showOnboarding, setShowOnboarding, resetOnboarding };
-};

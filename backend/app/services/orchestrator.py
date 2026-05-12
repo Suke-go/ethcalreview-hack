@@ -16,6 +16,11 @@ from app.services.application_form_generator import generate_application_form
 from app.services.explanation_generator import generate_explanation_document
 from app.services.questionnaire_generator import generate_questionnaire
 from app.services.device_description_generator import generate_device_description
+from app.services.official_document_service import (
+    default_official_document_types,
+    is_official_document_type,
+    render_official_document,
+)
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +32,8 @@ class DocumentType(str, Enum):
     IMPLEMENTATION_PLAN = "implementation_plan"  # 実施計画書
     CONSENT_FORM = "consent_form"  # 同意書（既存DOCXコピー）
     CONSENT_WITHDRAWAL = "consent_withdrawal"  # 同意撤回書（既存DOCXコピー）
+    HONORARIUM_RATIONALE = "honorarium_rationale"  # 謝金単価の根拠
+    PARTICIPANT_LIST = "participant_list"  # 実験参加者リスト
     EXPLANATION = "explanation"  # 参加者説明書
     PRE_QUESTIONNAIRE = "pre_questionnaire"  # 事前アンケート
     POST_QUESTIONNAIRE = "post_questionnaire"  # 事後アンケート
@@ -255,15 +262,16 @@ class DocumentOrchestrator:
             
             if progress_callback:
                 progress_callback(progress_data)
+
+        official_context = form_data.get("_generation_context", form_data)
+        llm_form_data = {key: value for key, value in form_data.items() if key != "_generation_context"}
         
         # デフォルトの書類タイプ
         if document_types is None:
             document_types = [
-                DocumentType.APPLICATION_FORM,
                 DocumentType.IMPLEMENTATION_PLAN,
-                DocumentType.CONSENT_FORM,
-                DocumentType.CONSENT_WITHDRAWAL,
                 DocumentType.EXPLANATION,
+                *(DocumentType(doc_type) for doc_type in default_official_document_types(official_context)),
             ]
             if include_questionnaire:
                 document_types.extend([
@@ -272,7 +280,7 @@ class DocumentOrchestrator:
                 ])
             
             # 新規開発デバイスがある場合はデバイス説明書を追加
-            has_new_device = self._detect_new_device(form_data)
+            has_new_device = self._detect_new_device(llm_form_data)
             if has_new_device:
                 document_types.append(DocumentType.DEVICE_DESCRIPTION)
                 logger.info("  新規開発デバイスを検出: デバイス説明書を生成対象に追加")
@@ -290,14 +298,13 @@ class DocumentOrchestrator:
         
         for doc_type in document_types:
             if doc_type in [
-                DocumentType.APPLICATION_FORM,
                 DocumentType.IMPLEMENTATION_PLAN,
                 DocumentType.EXPLANATION,
                 DocumentType.PRE_QUESTIONNAIRE,
                 DocumentType.POST_QUESTIONNAIRE,
                 DocumentType.DEVICE_DESCRIPTION,
             ]:
-                task = self._generate_single_document(doc_type, form_data)
+                task = self._generate_single_document(doc_type, llm_form_data)
                 llm_tasks.append(task)
                 llm_doc_types.append(doc_type)
         
@@ -321,15 +328,10 @@ class DocumentOrchestrator:
         # テンプレートコピー（同期処理）
         # ========================================
         for doc_type in document_types:
-            if doc_type == DocumentType.CONSENT_FORM:
-                self._copy_template("03_同意書_template.docx", "03_同意書.docx")
+            if is_official_document_type(doc_type.value):
+                render_official_document(doc_type.value, official_context, self.output_dir)
                 generated.append(doc_type.value)
-                logger.info(f"    ✓ {doc_type.value} コピー完了")
-                
-            elif doc_type == DocumentType.CONSENT_WITHDRAWAL:
-                self._copy_template("04_同意撤回書_template.docx", "04_同意撤回書.docx")
-                generated.append(doc_type.value)
-                logger.info(f"    ✓ {doc_type.value} コピー完了")
+                logger.info(f"    ✓ {doc_type.value} 公式テンプレート生成完了")
         
         logger.info("-" * 40)
         logger.info(f"生成完了: {len(generated)}/{len(document_types)}")

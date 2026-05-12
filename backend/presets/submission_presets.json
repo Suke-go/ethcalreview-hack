@@ -1,0 +1,33 @@
+[
+  {
+    "id": "systems_information",
+    "label": "システム情報系",
+    "recipient": "システム情報系長　殿",
+    "committee_name": "筑波大学 システム情報系 研究倫理委員会",
+    "office_name": "システム情報エリア支援室",
+    "office_tel": "029-853-4989",
+    "default_affiliation_label": "筑波大学システム情報系",
+    "domain_head_candidates": [
+      {
+        "name": "矢野 博明",
+        "title": "系長"
+      }
+    ],
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-05-02T00:00:00"
+  },
+  {
+    "id": "library_information_media",
+    "label": "図書館情報メディア系",
+    "recipient": "図書館情報メディア系長　殿",
+    "committee_name": "",
+    "office_name": "",
+    "office_tel": "",
+    "default_affiliation_label": "筑波大学図書館情報メディア系",
+    "domain_head_candidates": [],
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-05-02T00:00:00"
+  }
+]

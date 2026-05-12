@@ -166,3 +166,21 @@
         align-items: flex-start;
     }
 }
+
+.ingest-status {
+    margin-bottom: var(--spacing-4);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.ingest-status p {
+    margin: 0.25rem 0;
+}
+
+.ingest-warning {
+    color: var(--color-warning, #b45309);
+}

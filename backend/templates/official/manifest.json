@@ -1,0 +1,60 @@
+{
+  "version": "2026-05-02",
+  "templates": {
+    "application_form": {
+      "file": "01-1.研究倫理審査申請書.docx",
+      "kind": "docx",
+      "layout_lock": true,
+      "required_anchors": [
+        "研　究　倫　理　審　査　申　請　書",
+        "１　課題名",
+        "３　実施分担者",
+        "１３　添付書類",
+        "１４　実施責任者の問い合わせ先"
+      ],
+      "renderer": "application_form_v1"
+    },
+    "consent_form": {
+      "file": "03_同意書 1.docx",
+      "kind": "docx",
+      "layout_lock": true,
+      "required_anchors": [
+        "同　　意　　書",
+        "研究や実験に協力した結果",
+        "研究の概要について",
+        "③　個人情報の保護について"
+      ],
+      "renderer": "consent_form_v1"
+    },
+    "consent_withdrawal": {
+      "file": "04_同意撤回書 1.docx",
+      "kind": "docx",
+      "layout_lock": true,
+      "required_anchors": [
+        "同　　意　　撤　　回　　書",
+        "研究や実験に協力することを撤回した結果"
+      ],
+      "renderer": "consent_withdrawal_v1"
+    },
+    "honorarium_rationale": {
+      "file": "(1)_謝金単価の根拠について（様式）.docx",
+      "kind": "docx",
+      "layout_lock": true,
+      "required_anchors": [
+        "謝金単価の根拠について",
+        "研究課題名",
+        "謝金支出案"
+      ],
+      "renderer": "honorarium_rationale_v1"
+    },
+    "participant_list": {
+      "file": "実験参加者リスト.xlsx",
+      "kind": "xlsx",
+      "layout_lock": true,
+      "required_anchors": [
+        "公式"
+      ],
+      "renderer": "participant_list_v1"
+    }
+  }
+}

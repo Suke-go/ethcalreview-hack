@@ -69,6 +69,8 @@ class GenerateStep(BaseModel):
     completed_at: Optional[datetime] = None
     output_dir: Optional[str] = None  # 出力ディレクトリパス
     generated_documents: List[str] = Field(default_factory=list)  # 生成された書類リスト
+    preset_snapshot: Dict[str, Any] = Field(default_factory=dict)
+    context_snapshot: Dict[str, Any] = Field(default_factory=dict)
     error: Optional[str] = None  # エラーメッセージ
     documents: Dict[str, DocumentStatus] = Field(default_factory=lambda: {
         "application_form": DocumentStatus(),

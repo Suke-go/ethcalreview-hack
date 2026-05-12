@@ -12,7 +12,7 @@ export interface SSEOptions {
     body?: unknown;
     onProgress?: (event: ProgressEvent) => void;
     onResult?: (result: unknown) => void;
-    onError?: (error: string) => void;
+    onError?: (error: string, detail?: unknown) => void;
 }
 
 export type SSEStatus = 'idle' | 'connecting' | 'streaming' | 'done' | 'error';
@@ -125,7 +125,7 @@ export function useSSE<T = unknown>() {
                                     setError(errorMessage);
                                     setStatus('error');
                                     statusRef.current = 'error';
-                                    options.onError?.(errorMessage);
+                                    options.onError?.(errorMessage, parsedData.detail);
                                 }
                             } catch (e) {
                                 console.error('Failed to parse SSE data:', e, currentData);

@@ -1,7 +1,7 @@
 // frontend/src/components/SessionList.tsx
 // セッション一覧・選択コンポーネント
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { SessionSummary, SessionStatus } from '../types';
 import { getSessions, deleteSession, resumeSession } from '../api/client';
 import { Button } from './common/Button';
@@ -35,7 +35,7 @@ export function SessionList({ onSelectSession, onCreateNew }: SessionListProps) 
     const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState<SessionStatus | 'all'>('all');
 
-    const loadSessions = async () => {
+    const loadSessions = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -46,11 +46,11 @@ export function SessionList({ onSelectSession, onCreateNew }: SessionListProps) 
         } finally {
             setLoading(false);
         }
-    };
+    }, [filter]);
 
     useEffect(() => {
         loadSessions();
-    }, [filter]);
+    }, [loadSessions]);
 
     const handleDelete = async (sessionId: string, e: React.MouseEvent) => {
         e.stopPropagation();

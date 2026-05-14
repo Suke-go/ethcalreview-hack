@@ -215,20 +215,52 @@ export const getDownloadUrl = (sessionId: string): string => {
     return `${API_BASE_URL}/api/generate/download/${sessionId}`;
 };
 
-// ZIPをダウンロードする (Tauri WebView でも動作するよう <a download> 経由でトリガー)
-//
-// Tauri 2 の WebView では `window.open(url, '_blank')` がブラウザのように
-// ダウンロードを発火しないため、明示的に Blob を取得して保存リンクを
-// クリックする実装にしている。
+// Tauri ランタイムかどうかを判定 (resolveApiBaseUrl と同じ判定方法)
+const isTauriRuntime = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const w = window as unknown as Record<string, unknown>;
+    return '__TAURI_INTERNALS__' in w || '__TAURI__' in w;
+};
+
+/**
+ * ZIP ファイルをダウンロードする (環境ごとに動作が異なる):
+ *
+ *  - **ブラウザ**: Blob として取得し `<a download>` で保存ダイアログを発火。
+ *  - **Tauri**: WebView2 / WKWebView がプログラム的な `<a download>` クリックを
+ *    silent に drop するため、まずバックエンドの download エンドポイントを叩いて
+ *    `{app_data}/output/{session_id}/ethics_documents.zip` をディスクに作らせ、
+ *    Rust 側コマンド `save_zip_to_downloads` で Downloads フォルダにコピーして
+ *    Explorer / Finder で reveal する。
+ *
+ * 戻り値: Tauri モード時のみ保存先パス。ブラウザモードでは undefined。
+ */
 export const downloadDocumentsZip = async (
     sessionId: string,
     filename: string = 'ethics_documents.zip'
-): Promise<void> => {
+): Promise<string | undefined> => {
+    if (isTauriRuntime()) {
+        // バックエンドに ZIP を生成・ディスク書き込みさせる。
+        // レスポンス本体は破棄して構わない (Rust が disk から読む)。
+        const response = await defaultClient.get(
+            `/api/generate/download/${sessionId}`,
+            { responseType: 'blob' }
+        );
+        if (response.status !== 200) {
+            throw new Error(`backend returned status ${response.status}`);
+        }
+        const { invoke } = await import('@tauri-apps/api/core');
+        const savedPath = await invoke<string>('save_zip_to_downloads', {
+            sessionId,
+            suggestedFilename: filename,
+        });
+        return savedPath;
+    }
+
+    // ブラウザ: Blob → <a download> で保存ダイアログ
     const response = await defaultClient.get<Blob>(
         `/api/generate/download/${sessionId}`,
         { responseType: 'blob' }
     );
-
     const blobUrl = URL.createObjectURL(response.data);
     try {
         const a = document.createElement('a');
@@ -239,9 +271,9 @@ export const downloadDocumentsZip = async (
         a.click();
         a.remove();
     } finally {
-        // 次のイベントループで revoke (click ハンドラ完了を待つ)
         setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
     }
+    return undefined;
 };
 
 // レビューAPI

@@ -1,6 +1,6 @@
 [package]
 name = "ethical-review-hacker"
-version = "0.1.1"
+version = "0.1.2"
 description = "EthicalReviewHacker — Tauri wrapper"
 authors = ["Zempo Lab"]
 edition = "2021"
@@ -14,7 +14,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
-tauri = { version = "2.0", features = [] }
+# devtools: リリースビルドでも DevTools を有効化 (WebView 内のエラー診断に必須)
+tauri = { version = "2.0", features = ["devtools"] }
 tauri-plugin-shell = "2.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

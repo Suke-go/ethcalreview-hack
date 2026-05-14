@@ -1174,7 +1174,14 @@ function App() {
                               size="lg"
                               onClick={async () => {
                                 try {
-                                  await downloadDocumentsZip(generatedSessionId);
+                                  const savedPath = await downloadDocumentsZip(generatedSessionId);
+                                  if (savedPath) {
+                                    // Tauri モード: 保存先パスを表示
+                                    toast.success(`保存しました: ${savedPath}`, { autoClose: 8000 });
+                                  } else {
+                                    // ブラウザモード: ブラウザ側のダウンロードが発火
+                                    toast.success('ダウンロードを開始しました');
+                                  }
                                 } catch (err) {
                                   console.error('ZIP download failed:', err);
                                   toast.error(

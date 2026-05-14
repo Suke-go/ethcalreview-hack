@@ -2,6 +2,7 @@
 // Rebuttal（修正対応）入力・表示コンポーネント
 
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 import type { RebuttalSuggestion } from '../types';
 import { createRebuttal, applyRebuttal } from '../api/client';
 import './RebuttalForm.css';
@@ -74,7 +75,7 @@ export function RebuttalForm({ sessionId, onComplete }: RebuttalFormProps) {
                 editedResponse,
                 Array.from(acceptedSuggestions)
             );
-            alert('修正を適用しました');
+            toast.success('修正を適用しました');
             onComplete?.();
         } catch (e) {
             setError(e instanceof Error ? e.message : '修正の適用に失敗しました');
@@ -225,9 +226,31 @@ export function RebuttalForm({ sessionId, onComplete }: RebuttalFormProps) {
                 />
                 <button
                     className="btn-copy"
-                    onClick={() => {
-                        navigator.clipboard.writeText(editedResponse);
-                        alert('クリップボードにコピーしました');
+                    onClick={async () => {
+                        try {
+                            // navigator.clipboard はセキュアコンテキスト必須。
+                            // Tauri WebView は通常 secure context だが、
+                            // 念のため execCommand フォールバックを用意。
+                            if (navigator.clipboard && window.isSecureContext) {
+                                await navigator.clipboard.writeText(editedResponse);
+                            } else {
+                                const ta = document.createElement('textarea');
+                                ta.value = editedResponse;
+                                ta.style.position = 'fixed';
+                                ta.style.left = '-9999px';
+                                document.body.appendChild(ta);
+                                ta.select();
+                                const ok = document.execCommand('copy');
+                                ta.remove();
+                                if (!ok) throw new Error('execCommand("copy") failed');
+                            }
+                            toast.success('クリップボードにコピーしました');
+                        } catch (err) {
+                            console.error('clipboard copy failed:', err);
+                            toast.error(
+                                `コピーに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`
+                            );
+                        }
                     }}
                 >
                     📋 コピー

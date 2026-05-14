@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Button } from './common/Button';
 import { Input, Select } from './common/Input';
 import type { Settings } from '../types';
+import { openExternal } from '../utils/openExternal';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -220,6 +221,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="api-link"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    void openExternal('https://platform.openai.com/api-keys');
+                                }}
                             >
                                 🔗 OpenAI Platformでキーを取得
                             </a>
@@ -229,6 +234,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="api-link"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    void openExternal('https://aistudio.google.com/app/apikey');
+                                }}
                             >
                                 🔗 Google AI Studioでキーを取得
                             </a>

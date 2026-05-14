@@ -215,6 +215,35 @@ export const getDownloadUrl = (sessionId: string): string => {
     return `${API_BASE_URL}/api/generate/download/${sessionId}`;
 };
 
+// ZIPをダウンロードする (Tauri WebView でも動作するよう <a download> 経由でトリガー)
+//
+// Tauri 2 の WebView では `window.open(url, '_blank')` がブラウザのように
+// ダウンロードを発火しないため、明示的に Blob を取得して保存リンクを
+// クリックする実装にしている。
+export const downloadDocumentsZip = async (
+    sessionId: string,
+    filename: string = 'ethics_documents.zip'
+): Promise<void> => {
+    const response = await defaultClient.get<Blob>(
+        `/api/generate/download/${sessionId}`,
+        { responseType: 'blob' }
+    );
+
+    const blobUrl = URL.createObjectURL(response.data);
+    try {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } finally {
+        // 次のイベントループで revoke (click ハンドラ完了を待つ)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+    }
+};
+
 // レビューAPI
 
 export const requestReview = async (

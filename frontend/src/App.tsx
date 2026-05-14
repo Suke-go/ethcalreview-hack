@@ -19,7 +19,7 @@ import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { useOnboarding } from './hooks/useOnboarding';
 import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
-import { setApiKey, getSession, getDownloadUrl, getPresets, API_BASE_URL } from './api/client';
+import { setApiKey, getSession, downloadDocumentsZip, getPresets, API_BASE_URL } from './api/client';
 import type { AnalysisResult, FormData, SessionDetail, PresetBundle, ValidationIssue } from './types';
 
 
@@ -1172,8 +1172,15 @@ function App() {
                             <Button
                               variant="success"
                               size="lg"
-                              onClick={() => {
-                                window.open(getDownloadUrl(generatedSessionId), '_blank');
+                              onClick={async () => {
+                                try {
+                                  await downloadDocumentsZip(generatedSessionId);
+                                } catch (err) {
+                                  console.error('ZIP download failed:', err);
+                                  toast.error(
+                                    `ダウンロードに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`
+                                  );
+                                }
                               }}
                             >
                               📥 ZIPファイルをダウンロード

@@ -2,6 +2,7 @@
 // セッション一覧・選択コンポーネント
 
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import type { SessionSummary, SessionStatus } from '../types';
 import { getSessions, deleteSession, resumeSession } from '../api/client';
 import { Button } from './common/Button';
@@ -59,8 +60,9 @@ export function SessionList({ onSelectSession, onCreateNew }: SessionListProps) 
         try {
             await deleteSession(sessionId);
             setSessions(sessions.filter(s => s.sessionId !== sessionId));
+            toast.success('セッションを削除しました');
         } catch (e) {
-            alert(e instanceof Error ? e.message : '削除に失敗しました');
+            toast.error(e instanceof Error ? e.message : '削除に失敗しました');
         }
     };
 
@@ -68,10 +70,10 @@ export function SessionList({ onSelectSession, onCreateNew }: SessionListProps) 
         e.stopPropagation();
         try {
             const result = await resumeSession(sessionId);
-            alert(`セッションを再開しました（現在のステップ: ${STEP_LABELS[result.currentStep] || result.currentStep}）`);
+            toast.success(`セッションを再開しました（現在のステップ: ${STEP_LABELS[result.currentStep] || result.currentStep}）`);
             onSelectSession(sessionId);
         } catch (e) {
-            alert(e instanceof Error ? e.message : '再開に失敗しました');
+            toast.error(e instanceof Error ? e.message : '再開に失敗しました');
         }
     };
 

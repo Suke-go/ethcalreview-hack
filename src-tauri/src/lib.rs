@@ -22,12 +22,28 @@ fn get_backend_port() -> u16 {
     BACKEND_PORT
 }
 
+/// 外部 URL を OS のデフォルトブラウザで開く。
+///
+/// Tauri WebView は `<a target="_blank">` を解釈しないため、外部リンクは
+/// 必ずこのコマンド経由で開く必要がある。許可するスキームは http/https のみ。
+#[tauri::command]
+fn open_external(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    // 危険なスキーム (file://, javascript:, データ URL 等) を弾く
+    let lower = url.to_ascii_lowercase();
+    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+        return Err(format!("unsupported url scheme: {}", url));
+    }
+    app.shell()
+        .open(&url, None)
+        .map_err(|e| format!("failed to open url: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(BackendChild::default())
-        .invoke_handler(tauri::generate_handler![get_backend_port])
+        .invoke_handler(tauri::generate_handler![get_backend_port, open_external])
         .setup(|app| {
             let handle = app.handle().clone();
 

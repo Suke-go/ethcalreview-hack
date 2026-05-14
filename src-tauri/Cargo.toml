@@ -1,6 +1,6 @@
 [package]
 name = "ethical-review-hacker"
-version = "0.1.0"
+version = "0.1.1"
 description = "EthicalReviewHacker — Tauri wrapper"
 authors = ["Zempo Lab"]
 edition = "2021"

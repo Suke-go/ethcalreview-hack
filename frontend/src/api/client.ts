@@ -276,6 +276,43 @@ export const downloadDocumentsZip = async (
     return undefined;
 };
 
+// 再フォーマット適用API（保存済みコンテキストから公式書類のみ再レンダリング）
+
+export interface ReformatResult {
+    sessionId: string;
+    status: string;
+    regenerated: string[];
+    errors: string[];
+    issues: Array<Record<string, unknown>>;
+    assumptions: Array<Record<string, unknown>>;
+}
+
+interface ReformatResponseRaw {
+    session_id: string;
+    status: string;
+    regenerated: string[];
+    errors: string[];
+    issues: Array<Record<string, unknown>>;
+    assumptions: Array<Record<string, unknown>>;
+}
+
+export const reformatDocuments = async (
+    sessionId: string
+): Promise<ReformatResult> => {
+    const response = await defaultClient.post<ReformatResponseRaw>(
+        `/api/generate/reformat/${sessionId}`
+    );
+    const d = response.data;
+    return {
+        sessionId: d.session_id,
+        status: d.status,
+        regenerated: d.regenerated ?? [],
+        errors: d.errors ?? [],
+        issues: d.issues ?? [],
+        assumptions: d.assumptions ?? [],
+    };
+};
+
 // レビューAPI
 
 export const requestReview = async (

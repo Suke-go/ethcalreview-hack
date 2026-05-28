@@ -20,6 +20,8 @@ from app.services.preset_manager import load_preset_bundle
 from app.services.form_context_builder import build_generation_context
 from app.services.context_text_enricher import enrich_generation_context_with_llm, flatten_context_for_llm_form_data
 from app.services.generation_validator import error_issues, issue_payload, validate_generation_context
+from app.services.official_document_service import default_official_document_types, render_official_document
+from app.services.review_summary import build_review_notes, write_review_notes_file
 from app.models.session import Session, SessionStatus, StepStatus
 from app.config import app_config, load_user_settings
 from app.logger import get_logger
@@ -49,6 +51,7 @@ class GenerateResponse(BaseModel):
     status: str
     documents_generated: List[str]
     errors: List[str] = []
+    review_notes: Dict[str, Any] = {}  # レビュー指摘（不足・要確認・自動推定）
     download_url: str = ""  # ダウンロードURL
 
 
@@ -170,19 +173,10 @@ async def generate_documents(
         session.save(SESSIONS_DIR)
         raise HTTPException(status_code=500, detail=f"生成コンテキストの構築に失敗しました: {str(e)}")
 
+    # 方針: 入力不足でも中断しない。提案値で補完したドラフトを必ず生成し、
+    #       不足・要確認・自動推定はレビュー指摘（review_notes）として返す。
     validation_issues = validate_generation_context(generation_context)
-    validation_errors = error_issues(validation_issues)
-    if validation_errors:
-        session.steps.generate.status = StepStatus.ERROR
-        session.steps.generate.error = "入力不足があります"
-        session.save(SESSIONS_DIR)
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "message": "入力不足があるため、提出用DOCXは生成しません。",
-                "issues": issue_payload(validation_issues),
-            },
-        )
+    review_notes = build_review_notes(generation_context)
 
     orchestrator_form_data = {
         **flatten_context_for_llm_form_data(merged_form_data, generation_context),
@@ -224,13 +218,95 @@ async def generate_documents(
         session.steps.generate.error = "; ".join(result.errors)
     session.status = SessionStatus.COMPLETED if result.success else SessionStatus.IN_PROGRESS
     session.save(SESSIONS_DIR)
-    
+
+    # レビュー指摘リストを出力一式に同梱
+    try:
+        write_review_notes_file(generation_context, output_dir)
+    except Exception as review_exc:
+        logger.warning(f"レビュー指摘の出力に失敗: {type(review_exc).__name__}: {review_exc}")
+
     return GenerateResponse(
         session_id=session_id,
         status="completed" if result.success else "partial",
         documents_generated=result.generated_documents,
         errors=result.errors,
+        review_notes=review_notes,
         download_url=f"/api/generate/download/{session_id}"
+    )
+
+
+class ReformatResponse(BaseModel):
+    """再フォーマット適用レスポンス"""
+    session_id: str
+    status: str
+    regenerated: List[str]
+    errors: List[str] = []
+    issues: List[Dict[str, Any]] = []  # 過不足（未入力・要確認項目）
+    assumptions: List[Dict[str, Any]] = []  # 入力から自動推定して補完した項目（要確認）
+    download_url: str = ""
+
+
+@router.post("/reformat/{session_id}", response_model=ReformatResponse)
+async def reformat_official_documents(session_id: str):
+    """保存済みの生成コンテキストから「公式様式の書類」だけを再レンダリングする。
+
+    既に生成済みのセッションに対し、テンプレート/レンダラの更新や入力修正を
+    公式フォーマットへ当てはめ直したいときに使う。決定的処理のみで LLM もAPIキーも不要。
+    実施計画書・説明書・アンケートなど LLM 生成物は再生成せず既存ファイルを保持する。
+    過不足（未入力・要確認項目）があれば issues として返す。
+    """
+    try:
+        session = Session.load(SESSIONS_DIR, session_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    context = session.steps.generate.context_snapshot
+    if not context:
+        raise HTTPException(
+            status_code=400,
+            detail="このセッションには再フォーマット可能な生成コンテキストがありません。先に書類生成を実行してください。",
+        )
+
+    output_dir = app_config.output_dir / session_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    regenerated: List[str] = []
+    errors: List[str] = []
+    for doc_type in default_official_document_types(context):
+        try:
+            render_official_document(doc_type, context, output_dir)
+            regenerated.append(doc_type)
+        except Exception as e:  # 1書類の失敗で全体を止めない
+            errors.append(f"{doc_type}: {e}")
+            logger.error(f"reformat {doc_type} failed: {type(e).__name__}: {e}")
+
+    # 過不足（未入力・要確認）の可視化。再レンダリング自体は既定値で補完される。
+    issues = issue_payload(validate_generation_context(context))
+    # 入力から自動推定して補完した項目（LLMが記録した推定）も返し、利用者が確認できるようにする。
+    meta = context.get("meta", {}) if isinstance(context, dict) else {}
+    assumptions = meta.get("llm_assumptions", []) or []
+    # レビュー指摘リスト（.md）も最新化して同梱する
+    try:
+        write_review_notes_file(context, output_dir)
+    except Exception as review_exc:
+        logger.warning(f"レビュー指摘の出力に失敗: {type(review_exc).__name__}: {review_exc}")
+
+    # 公式書類分をセッションへ反映（LLM生成物のリストは保持）
+    existing = session.steps.generate.generated_documents or []
+    session.steps.generate.generated_documents = list(dict.fromkeys([*existing, *regenerated]))
+    session.steps.generate.output_dir = str(output_dir)
+    session.save(SESSIONS_DIR)
+
+    logger.info(f"reformat session {session_id[:8]}: regenerated={regenerated} errors={len(errors)}")
+
+    return ReformatResponse(
+        session_id=session_id,
+        status="completed" if not errors else "partial",
+        regenerated=regenerated,
+        errors=errors,
+        issues=issues,
+        assumptions=assumptions,
+        download_url=f"/api/generate/download/{session_id}",
     )
 
 
@@ -243,27 +319,14 @@ async def download_documents(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     
     zip_path = output_dir / "ethics_documents.zip"
-    
-    # サンプルファイルのディレクトリ
-    sample_dir = app_config.project_root / "sample"
-    
-    # ZIPファイル作成
+
+    # ZIPファイル作成（生成済みの正式書類・参考様式・レビュー指摘のみを同梱）。
+    # 旧来の空サンプル（sample/03_同意書(sample).docx 等）は、正式な同意書を生成するようになったため同梱しない。
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # 生成されたドキュメント
         for file in output_dir.iterdir():
-            if file.suffix in ['.docx', '.xlsx', '.json']:
+            if file.suffix in ['.docx', '.doc', '.xlsx', '.xlsm', '.json', '.md']:
                 zipf.write(file, file.name)
-        
-        # サンプル同意書・同意撤回書を追加
-        sample_files = [
-            "03_同意書(sample).docx",
-            "04_同意撤回書(sample).docx",
-        ]
-        for sample_file in sample_files:
-            sample_path = sample_dir / sample_file
-            if sample_path.exists():
-                zipf.write(sample_path, f"sample/{sample_file}")
-    
+
     return FileResponse(
         path=zip_path,
         filename="ethics_documents.zip",

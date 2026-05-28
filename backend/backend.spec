@@ -83,7 +83,6 @@ hidden_imports = [
     'app.api.session',
     'app.api.rebuttal',
     'app.api.detect',
-    'app.api.consent',
     'app.api.documents',
     'app.services',
     'app.models',

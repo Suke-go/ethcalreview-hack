@@ -37,7 +37,7 @@ from fastapi.exceptions import RequestValidationError
 
 from app.api import settings, analyze, generate, review
 from app.api import analyze_stream, review_stream, generate_stream
-from app.api import session, rebuttal, detect, consent, documents, ingest
+from app.api import session, rebuttal, detect, documents, ingest
 
 app = FastAPI(
     title="EthicalReviewHacker API",
@@ -111,7 +111,6 @@ app.include_router(review_stream.router, prefix="/api/review", tags=["Review Str
 app.include_router(session.router, prefix="/api/sessions", tags=["Session"])
 app.include_router(rebuttal.router, prefix="/api/rebuttal", tags=["Rebuttal"])
 app.include_router(detect.router, prefix="/api/detect", tags=["Detection"])
-app.include_router(consent.router, prefix="/api/consent", tags=["Consent Forms"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Document Generation"])
 app.include_router(ingest.router, prefix="/api/ingest", tags=["Document Ingestion"])
 

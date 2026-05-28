@@ -35,7 +35,7 @@ def _as_list(value: Any) -> list[str]:
     return [str(value).strip()]
 
 
-def _clip_text(value: Any, limit: int = 18_000) -> str:
+def _clip_text(value: Any, limit: int = 60_000) -> str:
     text = str(value or "")
     if len(text) <= limit:
         return text
@@ -77,13 +77,14 @@ async def enrich_generation_context_with_llm(
 - 取得する研究データ
 - データ管理方法
 
-この研究では、複数条件（無字幕・通常字幕・Dynamik・提案手法）による反復測定デザイン、短い講演クリップ、理解確認、韻律に基づく強調語同定、話者の態度・意図推定、主観的認知負荷評価、追加ブロックとして音声劣化条件における通常字幕と韻律ベース字幕の比較、条件順序のカウンターバランスを含む場合があります。入力に含まれる範囲でこれらを自然な研究計画本文にしてください。
-
 本文生成の方針:
-- 「何を比較するか」「参加者が何をするか」「何を測るか」を明示してください。
-- アンケート用紙や実験刺激の生成に使えるよう、測定ブロックを具体化してください。
+- **入力された研究計画（source_text / followup_answers / 各フィールド）に書かれている内容だけ**を根拠に具体化してください。特定の研究テーマ（字幕・音声・特定の手法名など）を勝手に想定しないでください。
+- **入力が議論ログ・打合せメモ等の未整理テキスト（口語・複数発言・脱線・未決・矛盾を含む）の場合**：会話から「決定事項」を抽出して本文化し、脱線・雑談は無視してください。矛盾する記述がある場合は**より新しい/結論側の発言を優先**し、未確定事項は本文に混ぜず missing_items に分けてください。
+- 実験デザイン（条件比較・反復測定・カウンターバランス等）、課題、評価指標が入力に含まれる場合は、その範囲で「何を比較するか（独立変数/条件）」「参加者が何をするか（課題）」「何を測るか（従属変数/評価指標）」を明示してください。入力に無いデザインは創作しないでください。
+- アンケート用紙や実験刺激の生成に使えるよう、入力に基づく測定ブロック（conditions と measures）を具体化してください。
 - 不明点は本文に曖昧に混ぜず、missing_items に分けてください。
-- followup_answers に回答がある場合は、それを優先してください。
+- 入力から妥当に推定した項目は assumptions に「項目・推定値・推定理由」を必ず記録してください（後で利用者が確認できるようにするため）。
+- followup_answers に回答がある場合は、それを最優先してください。
 
 入力:
 {_brief_context(context)}
@@ -97,6 +98,8 @@ JSON schema:
   "count_rationale": "予定人数の根拠。人数が不明なら空文字。",
   "recruitment_method": "募集方法。1から3文。",
   "procedures": ["手順を時系列の文で列挙"],
+  "conditions": ["実験条件（独立変数の水準）を列挙。条件比較が無ければ空配列"],
+  "measures": ["測定項目（従属変数・評価指標・尺度）を列挙"],
   "risks": ["考えられるリスクを列挙"],
   "risk_countermeasures": ["risks と同じ順序で対策を列挙"],
   "data_types": ["取得する研究データを具体的に列挙"],
@@ -140,6 +143,13 @@ JSON schema:
     data_types = _as_list(generated.get("data_types"))
     if data_types:
         data["types"] = data_types
+    # 測定設計（条件・評価指標）をアンケート生成へ橋渡しするため context に保持
+    conditions = _as_list(generated.get("conditions"))
+    if conditions:
+        enriched["conditions"] = conditions
+    measures = _as_list(generated.get("measures"))
+    if measures:
+        enriched["measures"] = measures
     assumptions = generated.get("assumptions")
     if isinstance(assumptions, list):
         enriched.setdefault("meta", {})["llm_assumptions"] = assumptions
@@ -172,6 +182,8 @@ def flatten_context_for_llm_form_data(form_data: dict[str, Any], context: dict[s
             "participantsJustification": participants.get("count_rationale", ""),
             "recruitmentMethod": participants.get("recruitment_method", ""),
             "procedures": context.get("procedures", []),
+            "conditions": context.get("conditions", []),
+            "measures": context.get("measures", []),
             "risks": context.get("risks", []),
             "riskCountermeasures": context.get("risk_countermeasures", []),
             "rewardRationale": reward.get("rationale", ""),

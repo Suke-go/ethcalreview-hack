@@ -2,17 +2,17 @@
   "version": "2026-05-02",
   "templates": {
     "application_form": {
-      "file": "01-1.研究倫理審査申請書.docx",
+      "file": "01-1_研究倫理審査申請書_260422.docx",
       "kind": "docx",
       "layout_lock": true,
       "required_anchors": [
         "研　究　倫　理　審　査　申　請　書",
-        "１　課題名",
-        "３　実施分担者",
-        "１３　添付書類",
-        "１４　実施責任者の問い合わせ先"
+        "１研究計画の概要",
+        "取得データに関する情報",
+        "3. 実験対象者",
+        "実施責任者の問い合わせ先"
       ],
-      "renderer": "application_form_v1"
+      "renderer": "application_form_v2_260422"
     },
     "consent_form": {
       "file": "03_同意書 1.docx",
@@ -46,6 +46,18 @@
         "謝金支出案"
       ],
       "renderer": "honorarium_rationale_v1"
+    },
+    "video_consent": {
+      "file": "05_ビデオ画像公開承諾書.docx",
+      "kind": "docx",
+      "layout_lock": true,
+      "required_anchors": [
+        "ビデオ画像の公開についての",
+        "承諾書・承諾変更書",
+        "研究課題：",
+        "（実施責任者）"
+      ],
+      "renderer": "video_consent_v1"
     },
     "participant_list": {
       "file": "実験参加者リスト.xlsx",

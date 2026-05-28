@@ -19,7 +19,7 @@ import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { useOnboarding } from './hooks/useOnboarding';
 import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
-import { setApiKey, getSession, downloadDocumentsZip, getPresets, API_BASE_URL } from './api/client';
+import { setApiKey, getSession, downloadDocumentsZip, reformatDocuments, getPresets, API_BASE_URL } from './api/client';
 import type { AnalysisResult, FormData, SessionDetail, PresetBundle, ValidationIssue } from './types';
 
 
@@ -136,6 +136,7 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [generatedSessionId, setGeneratedSessionId] = useState<string | null>(null);
+  const [reformatting, setReformatting] = useState(false);
   const [presets, setPresets] = useState<PresetBundle | null>(null);
   const [generationIssues, setGenerationIssues] = useState<ValidationIssue[]>([]);
   const [rawResearchInput, setRawResearchInput] = useState('');
@@ -1191,6 +1192,46 @@ function App() {
                               }}
                             >
                               📥 ZIPファイルをダウンロード
+                            </Button>
+                            <Button
+                              variant="primary"
+                              isLoading={reformatting}
+                              onClick={async () => {
+                                if (!generatedSessionId) return;
+                                setReformatting(true);
+                                try {
+                                  const res = await reformatDocuments(generatedSessionId);
+                                  const n = res.regenerated.length;
+                                  if (res.errors.length > 0) {
+                                    toast.warning(
+                                      `公式書類を再生成しました（${n}件）。一部失敗: ${res.errors.join(', ')}`
+                                    );
+                                  } else {
+                                    toast.success(`公式フォーマットへ再適用しました（${n}件を再生成）`);
+                                  }
+                                  if (res.assumptions.length > 0) {
+                                    toast.info(
+                                      `入力から ${res.assumptions.length} 件を自動推定して補完しました。内容をご確認ください。`,
+                                      { autoClose: 8000 }
+                                    );
+                                  }
+                                  if (res.issues.length > 0) {
+                                    toast.info(
+                                      `未入力・要確認の項目が ${res.issues.length} 件あります。内容をご確認ください。`,
+                                      { autoClose: 8000 }
+                                    );
+                                  }
+                                } catch (err) {
+                                  console.error('reformat failed:', err);
+                                  toast.error(
+                                    `再フォーマットに失敗しました: ${err instanceof Error ? err.message : '不明なエラー'}`
+                                  );
+                                } finally {
+                                  setReformatting(false);
+                                }
+                              }}
+                            >
+                              🔄 再度フォーマットに当てはめる
                             </Button>
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                               <Button

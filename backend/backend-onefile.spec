@@ -35,7 +35,7 @@ hidden_imports = [
     'app.api', 'app.api.settings', 'app.api.analyze', 'app.api.analyze_stream',
     'app.api.generate', 'app.api.generate_stream', 'app.api.review',
     'app.api.review_stream', 'app.api.session', 'app.api.rebuttal',
-    'app.api.detect', 'app.api.consent', 'app.api.documents',
+    'app.api.detect', 'app.api.documents',
     'app.services', 'app.models', 'app.schemas', 'app.utils',
 ]
 

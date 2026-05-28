@@ -329,9 +329,14 @@ class DocumentOrchestrator:
         # ========================================
         for doc_type in document_types:
             if is_official_document_type(doc_type.value):
-                render_official_document(doc_type.value, official_context, self.output_dir)
-                generated.append(doc_type.value)
-                logger.info(f"    ✓ {doc_type.value} 公式テンプレート生成完了")
+                # 1書類の失敗で全体を止めない（他書類は出力し、失敗は errors に集約）
+                try:
+                    render_official_document(doc_type.value, official_context, self.output_dir)
+                    generated.append(doc_type.value)
+                    logger.info(f"    ✓ {doc_type.value} 公式テンプレート生成完了")
+                except Exception as e:
+                    errors.append(f"{doc_type.value}: {e}")
+                    logger.error(f"    ✗ {doc_type.value} 公式テンプレート生成失敗: {type(e).__name__}: {e}")
         
         logger.info("-" * 40)
         logger.info(f"生成完了: {len(generated)}/{len(document_types)}")

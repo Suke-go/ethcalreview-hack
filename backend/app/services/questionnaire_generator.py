@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Literal
 
@@ -60,6 +61,7 @@ QUESTIONNAIRE_SYSTEM_INSTRUCTION = """
 - 刺激内容が未確定の理解確認問題は、刺激ごとに差し替えられるテンプレート質問として作ってください。
 - NASA-TLXなど既存尺度の完全転載は避け、倫理申請用の簡易主観評価項目として作ってください。
 - 個人を過度に識別する質問は避けてください。
+- 用語の制約：質問文や説明文で研究に協力する人を指す場合は必ず「研究対象者」または「参加者」と表記してください。それ以外の旧来の呼称（健康状態を含意する語や、実験の語を含む対象側の旧来の呼称など）は使用しないでください。
 - 出力はJSONのみです。
 """
 
@@ -71,20 +73,13 @@ def _as_text(value: Any) -> str:
 
 
 def _infer_conditions(form_data: dict[str, Any]) -> list[str]:
+    # 明示的に与えられた実験条件のみを使う。特定研究（字幕等）の条件を勝手に注入しない。
+    # 入力に条件が無ければ空のままとし、条件に依存しない汎用の主観評価項目を作る。
     explicit = form_data.get("conditions") or form_data.get("condition_names")
     if isinstance(explicit, list) and explicit:
         return [str(item) for item in explicit if str(item).strip()]
-
-    source = " ".join(
-        [
-            _as_text(form_data.get("title") or form_data.get("research_title")),
-            _as_text(form_data.get("methodology") or form_data.get("research_method")),
-            _as_text(form_data.get("procedures")),
-        ]
-    )
-    subtitle_keywords = ["字幕", "Dynamik", "韻律", "講演", "強調語", "音声劣化"]
-    if any(keyword in source for keyword in subtitle_keywords):
-        return ["無字幕", "通常字幕", "Dynamik", "提案手法"]
+    if isinstance(explicit, str) and explicit.strip():
+        return [part.strip() for part in re.split(r"[、,\n]", explicit) if part.strip()]
     return []
 
 
@@ -107,22 +102,20 @@ def _questionnaire_prompt(form_data: dict[str, Any], questionnaire_type: Literal
     context = _context_for_prompt(form_data, questionnaire_type)
     if questionnaire_type == "pre":
         intent = """
-事前アンケートを作成してください。
+事前アンケートを作成してください。特定の研究テーマを想定せず、研究計画コンテキストに基づいて項目を作ってください。
 含めるべき観点:
-- 参加条件の確認
-- 年齢区分など最小限の属性
-- 使用言語・字幕利用経験・講演視聴経験など研究に関係する背景
-- 聴覚・視覚・体調など、課題遂行やリスクに関係する自己申告
+- 参加条件の確認（対象者条件・除外基準に対応）
+- 年齢区分など最小限の属性（過度に個人を特定しない範囲）
+- 本研究の課題遂行に関係する経験・背景（研究計画に書かれている範囲のみ）
+- 課題遂行やリスクに関係する体調・感覚などの自己申告
 """
     else:
         intent = """
-実験中または実験後に使うアンケートを作成してください。
+実験中または実験後に使うアンケートを作成してください。特定の研究テーマを想定せず、研究計画コンテキスト（目的・方法・conditions・data_types・評価指標）に基づいて項目を具体化してください。入力に無い構成は作らないでください。
 含めるべき観点:
-- 各刺激後の理解確認
-- 話者が強調した内容の同定
-- 話者の態度・意図の推定
-- 字幕条件ごとの読みやすさ・邪魔さ・自然さ
-- 簡易的な主観的認知負荷
+- 各条件・各刺激に対する主観評価（研究計画の評価指標・従属変数に対応）
+- 課題の理解度・難易度など、研究計画上測定する内容の確認（該当する場合のみ）
+- 簡易的な主観的負担（必要に応じて）
 - 実験全体の比較評価と自由記述
 """
 
@@ -168,9 +161,10 @@ def _questionnaire_prompt(form_data: dict[str, Any], questionnaire_type: Literal
 
 
 def _fallback_pre_questionnaire() -> QuestionnaireSpec:
+    # 特定研究を想定しない汎用の事前アンケート（LLM生成に失敗した場合の最小構成）
     return QuestionnaireSpec(
         title="事前アンケート",
-        description="研究参加前に、参加条件と字幕・講演理解に関係する背景を確認します。",
+        description="研究参加前に、参加条件と課題遂行に関係する状態を確認します。",
         blocks=[
             QuestionnaireBlock(
                 block_id="pre_background",
@@ -185,32 +179,18 @@ def _fallback_pre_questionnaire() -> QuestionnaireSpec:
                         options=["18-19歳", "20-29歳", "30-39歳", "40歳以上", "回答しない"],
                     ),
                     SurveyItem(
-                        item_id="pre_language",
-                        question="日本語の文章を読むことに不安はありますか。",
-                        construct="言語理解",
+                        item_id="pre_condition",
+                        question="本研究の課題を行う上で支障となる健康上・身体上の事情はありますか。",
+                        construct="参加条件の自己申告",
+                        response_type="single_choice",
+                        options=["特にない", "少しある", "ある", "回答しない"],
+                    ),
+                    SurveyItem(
+                        item_id="pre_physical",
+                        question="本日の体調はいかがですか。",
+                        construct="当日の体調",
                         response_type="likert",
-                        scale=ScaleSpec(min_label="全く不安はない", max_label="非常に不安がある"),
-                    ),
-                    SurveyItem(
-                        item_id="pre_hearing",
-                        question="音声を聞き取ることに支障がありますか。",
-                        construct="聴覚に関する自己申告",
-                        response_type="single_choice",
-                        options=["支障はない", "少し支障がある", "大きな支障がある", "回答しない"],
-                    ),
-                    SurveyItem(
-                        item_id="pre_subtitle_use",
-                        question="動画視聴時に字幕を使う頻度を選択してください。",
-                        construct="字幕利用経験",
-                        response_type="single_choice",
-                        options=["ほとんど使わない", "ときどき使う", "よく使う", "ほぼ常に使う"],
-                    ),
-                    SurveyItem(
-                        item_id="pre_lecture_experience",
-                        question="TEDなどの短い講演動画を視聴する頻度を選択してください。",
-                        construct="講演視聴経験",
-                        response_type="single_choice",
-                        options=["ほとんどない", "年に数回", "月に数回", "週に1回以上"],
+                        scale=ScaleSpec(min_label="非常に悪い", max_label="非常に良い"),
                     ),
                 ],
             )
@@ -219,78 +199,63 @@ def _fallback_pre_questionnaire() -> QuestionnaireSpec:
 
 
 def _fallback_post_questionnaire(conditions: list[str]) -> QuestionnaireSpec:
-    condition_text = "、".join(conditions) if conditions else "各字幕条件"
+    condition_text = "、".join(conditions) if conditions else "各条件"
+    # 特定研究を想定しない汎用の事後アンケート。条件が与えられた場合のみ条件比較を加える。
+    per_task_items = [
+        SurveyItem(
+            item_id="task_difficulty",
+            question="課題はどの程度難しく感じましたか。",
+            construct="主観的難易度",
+            response_type="likert",
+            scale=ScaleSpec(min_label="全く難しくなかった", max_label="非常に難しかった"),
+        ),
+        SurveyItem(
+            item_id="task_load",
+            question="課題を行う際に、頭を使う負担を感じましたか。",
+            construct="主観的負担",
+            response_type="likert",
+            scale=ScaleSpec(min_label="全く負担を感じなかった", max_label="非常に負担を感じた"),
+        ),
+    ]
+    overall_items: list[SurveyItem] = []
+    if conditions:
+        overall_items.append(
+            SurveyItem(
+                item_id="post_best_condition",
+                question="最も良かったと感じた条件を選択してください。",
+                construct="条件比較",
+                response_type="single_choice",
+                options=conditions,
+            )
+        )
+    overall_items.append(
+        SurveyItem(
+            item_id="post_free",
+            question="実験全体について、気づいた点があれば自由に記入してください。",
+            construct="自由記述",
+            response_type="free_text",
+        )
+    )
+    description = (
+        f"{condition_text}での課題遂行時の主観評価と全体的な所感を確認します。"
+        if conditions
+        else "課題遂行時の主観評価と全体的な所感を確認します。"
+    )
     return QuestionnaireSpec(
         title="実験後アンケート",
-        description=f"{condition_text}での視聴体験、理解、負担感を確認します。",
+        description=description,
         blocks=[
             QuestionnaireBlock(
-                block_id="per_stimulus",
-                title="各動画視聴後の質問",
-                timing="per_stimulus",
-                items=[
-                    SurveyItem(
-                        item_id="stim_comprehension",
-                        question="この動画の主な内容を理解できましたか。",
-                        construct="内容理解",
-                        response_type="likert",
-                        scale=ScaleSpec(min_label="全く理解できなかった", max_label="よく理解できた"),
-                    ),
-                    SurveyItem(
-                        item_id="stim_claim",
-                        question="話者が最も伝えようとしていた内容を選択してください。",
-                        construct="主張理解",
-                        response_type="single_choice",
-                        options=["選択肢A", "選択肢B", "選択肢C", "わからない"],
-                    ),
-                    SurveyItem(
-                        item_id="stim_emphasis",
-                        question="話者が強調していたと思う語句を記入してください。",
-                        construct="強調語同定",
-                        response_type="free_text",
-                    ),
-                    SurveyItem(
-                        item_id="stim_intent",
-                        question="話者の態度や意図は分かりやすかったですか。",
-                        construct="態度・意図推定",
-                        response_type="likert",
-                        scale=ScaleSpec(min_label="全く分かりにくかった", max_label="非常に分かりやすかった"),
-                    ),
-                    SurveyItem(
-                        item_id="stim_load",
-                        question="この動画を見るときに、頭を使う負担を感じましたか。",
-                        construct="主観的認知負荷",
-                        response_type="likert",
-                        scale=ScaleSpec(min_label="全く負担を感じなかった", max_label="非常に負担を感じた"),
-                    ),
-                ],
+                block_id="per_task",
+                title="課題後の質問",
+                timing="post_condition",
+                items=per_task_items,
             ),
             QuestionnaireBlock(
-                block_id="post_comparison",
+                block_id="post_overall",
                 title="実験全体について",
                 timing="post_experiment",
-                items=[
-                    SurveyItem(
-                        item_id="post_best_condition",
-                        question="最も内容を理解しやすかった字幕条件を選択してください。",
-                        construct="条件比較",
-                        response_type="single_choice",
-                        options=conditions or ["条件A", "条件B", "条件C", "条件D"],
-                    ),
-                    SurveyItem(
-                        item_id="post_distraction",
-                        question="字幕表示が邪魔に感じられた条件があれば選択してください。",
-                        construct="字幕の負担",
-                        response_type="multiple_choice",
-                        options=(conditions or ["条件A", "条件B", "条件C", "条件D"]) + ["特になし"],
-                    ),
-                    SurveyItem(
-                        item_id="post_free",
-                        question="字幕の見やすさや分かりやすさについて、気づいた点を記入してください。",
-                        construct="自由記述",
-                        response_type="free_text",
-                    ),
-                ],
+                items=overall_items,
             ),
         ],
     )

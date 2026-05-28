@@ -37,7 +37,7 @@ class BudgetSettings(BaseModel):
     source: str = "運営費交付金"
     project_name: str = ""
     reward_per_person: int = 800
-    reward_type: str = "Amazonギフトカード（メールタイプ）"
+    reward_type: str = "Amazonギフトカード（Eメールタイプ）"
     hourly_rate: int = 1000
 
 
@@ -48,7 +48,7 @@ class InsuranceSettings(BaseModel):
 
 class UserSettings(BaseModel):
     laboratory: LaboratorySettings = LaboratorySettings()
-    submission_destination: str = "システム情報系"
+    submission_destination: str = "システム情報系長　殿"
     principal_investigator: InvestigatorSettings = InvestigatorSettings()
     experiment_conductor: ExperimentConductorSettings = ExperimentConductorSettings()
     ethics_committee: EthicsCommitteeSettings = EthicsCommitteeSettings()

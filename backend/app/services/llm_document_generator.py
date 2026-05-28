@@ -17,6 +17,14 @@ from app.logger import get_logger
 logger = get_logger(__name__)
 
 
+# 用語制約（全 generator 共通）: 研究に協力する人の呼称は必ず「研究対象者」または「参加者」に統一する。
+# 注意: 旧来の呼称（健康状態を含意する語や、実験の語を含む被る側の呼称など）は一切使用しない。
+# プロンプトに禁止語そのものを書くと生成文に伝播し得るため、ここでは肯定形で統一を指示する。
+TERMINOLOGY_RULE = (
+    "用語の制約：研究に協力する人を指す場合は、必ず「研究対象者」または「参加者」と表記すること。"
+    "それ以外の呼称（健康状態を含意する旧来の語や、実験の語を含む対象側の旧来の呼称など）は一切使用しないこと。"
+)
+
 # アカデミックライティング基本ルール（実施計画書向け）
 IMPLEMENTATION_PLAN_RULES = """
 【実施計画書の執筆原則】
@@ -44,13 +52,72 @@ IMPLEMENTATION_PLAN_RULES = """
    - 「本研究では〜を行う」「〜を明らかにする」
    - 「参加者は〜する」「実験者は〜を測定する」
    - 「〜に基づき」「〜を踏まえて」
+
+7. 用語の統一：
+   - 研究に協力する人は必ず「研究対象者」または「参加者」と表記する
+   - それ以外の呼称（健康状態を含意する旧来の語や、実験の語を含む対象側の旧来の呼称など）は一切使用しない
 """
+
+
+def build_implementation_plan_outline(is_questionnaire: bool = False) -> List[Dict[str, Any]]:
+    """実施計画書の章立て（見出し構成）を公式参考様式 260127 に沿って構築する。
+
+    公式参考様式（【記載例】01-2.実施計画書（参考様式）260127）の構成:
+        1.課題名
+        2.研究の概要（半ページ以内で簡略に記載）
+        3.実験方法
+            3-1.実験の目的
+            3-2.実験参加者
+            3-3.実験装置・実験タスク
+            3-4.実験手順
+        【アンケート調査の場合】
+        3.アンケートの実施方法
+            3-1.アンケートの目的
+            3-2.研究対象者
+            3-3.実施内容
+
+    Returns:
+        各セクションの dict（number, title, level, key）のリスト。
+        level=1 が大見出し、level=2 が小見出し。
+    """
+    outline: List[Dict[str, Any]] = [
+        {"number": "1", "title": "課題名", "level": 1, "key": "research_title"},
+        {"number": "2", "title": "研究の概要", "level": 1, "key": "overview"},
+    ]
+    if is_questionnaire:
+        outline += [
+            {"number": "3", "title": "アンケートの実施方法", "level": 1, "key": None},
+            {"number": "3-1", "title": "アンケートの目的", "level": 2, "key": "experiment_objective"},
+            {"number": "3-2", "title": "研究対象者", "level": 2, "key": "participants"},
+            {"number": "3-3", "title": "実施内容", "level": 2, "key": "procedures"},
+        ]
+    else:
+        outline += [
+            {"number": "3", "title": "実験方法", "level": 1, "key": None},
+            {"number": "3-1", "title": "実験の目的", "level": 2, "key": "experiment_objective"},
+            {"number": "3-2", "title": "実験参加者", "level": 2, "key": "participants"},
+            {"number": "3-3", "title": "実験装置・実験タスク", "level": 2, "key": "equipment"},
+            {"number": "3-4", "title": "実験手順", "level": 2, "key": "procedures"},
+        ]
+    return outline
+
+
+def _is_questionnaire_study(context: Dict[str, Any]) -> bool:
+    """研究方法・タイトルからアンケート調査主体かを簡易判定する。"""
+    source = " ".join(
+        str(context.get(key, ""))
+        for key in ("research_title", "brief_description", "methodology")
+    )
+    devices = context.get("devices") or []
+    has_device = any(str(d).strip() for d in devices)
+    questionnaire_markers = ["アンケート", "質問紙", "調査票", "Webアンケート", "ウェブアンケート"]
+    return (not has_device) and any(marker in source for marker in questionnaire_markers)
 
 
 class LLMDocumentGenerator:
     """
     LLMベースの書類生成器
-    
+
     Chain of Thought (CoT) アプローチで各セクションを順次生成し、
     アカデミックライティングの原則に準拠した文章を生成します。
     """
@@ -65,21 +132,18 @@ class LLMDocumentGenerator:
         output_dir: Path
     ) -> Path:
         """
-        実施計画書をLLMで生成
-        
-        Chain of Thoughtで各セクションを順次生成：
-        1. 研究背景（10行以上、関連研究を含む）
-        2. 研究目的
-        3. 実験の目的
-        4. 実験参加者
-        5. 謝金について
-        6. 実験装置
-        7. 実験手順
-        8. 想定される精神的・物理的負荷
+        実施計画書をLLMで生成（公式参考様式 260127 の構成に準拠）
+
+        構成（実験等の場合）:
+            1.課題名 / 2.研究の概要（半ページ） /
+            3.実験方法（3-1.実験の目的 / 3-2.実験参加者 / 3-3.実験装置・実験タスク / 3-4.実験手順）
+        アンケート調査の場合は 3.アンケートの実施方法（3-1.目的 / 3-2.研究対象者 / 3-3.実施内容）に分岐。
+
+        Chain of Thoughtで各セクションを順次生成する。
         """
         logger.info("=" * 60)
         logger.info("LLM実施計画書生成 開始")
-        
+
         # コンテキスト準備
         context = {
             "research_title": form_data.get("title", form_data.get("research_title", "")),
@@ -93,67 +157,49 @@ class LLMDocumentGenerator:
             "risk_countermeasures": form_data.get("riskCountermeasures", []),
             "reward_amount": form_data.get("rewardAmount", form_data.get("reward_amount", 800)),
         }
-        
+
+        is_questionnaire = _is_questionnaire_study(context)
+        outline = build_implementation_plan_outline(is_questionnaire)
         logger.info(f"  研究タイトル: {context['research_title'][:50]}...")
-        
+        logger.info(f"  様式分岐: {'アンケート調査' if is_questionnaire else '実験等'}")
+
         # 中間ファイル保存用
         intermediate_file = output_dir / "_intermediate_plan.json"
-        
+
         # Chain of Thought: 各セクションを順次生成
         sections = {}
-        
-        # 1. 研究背景（10行以上）
-        logger.info("  [1/8] 研究背景 生成中...")
-        sections["background"] = await self._generate_background(context)
-        self._save_intermediate(intermediate_file, sections, "background完了")
-        logger.info(f"    -> {len(sections['background'])} 文字生成")
-        
-        # 2. 研究目的
-        logger.info("  [2/8] 研究目的 生成中...")
-        sections["purpose"] = await self._generate_purpose(context)
-        self._save_intermediate(intermediate_file, sections, "purpose完了")
-        logger.info(f"    -> {len(sections['purpose'])} 文字生成")
-        
-        # 3. 実験の目的
-        logger.info("  [3/8] 実験の目的 生成中...")
-        sections["experiment_objective"] = await self._generate_experiment_objective(context)
+
+        # 2. 研究の概要（半ページ以内）
+        logger.info("  [1] 研究の概要 生成中...")
+        sections["overview"] = await self._generate_overview(context)
+        self._save_intermediate(intermediate_file, sections, "overview完了")
+
+        # 3-1. 実験の目的 / アンケートの目的
+        logger.info("  [2] 目的 生成中...")
+        sections["experiment_objective"] = await self._generate_experiment_objective(context, is_questionnaire)
         self._save_intermediate(intermediate_file, sections, "experiment_objective完了")
-        logger.info(f"    -> {len(sections['experiment_objective'])} 文字生成")
-        
-        # 4. 実験参加者
-        logger.info("  [4/8] 実験参加者 生成中...")
-        sections["participants"] = await self._generate_participants(context)
+
+        # 3-2. 実験参加者 / 研究対象者
+        logger.info("  [3] 研究対象者 生成中...")
+        sections["participants"] = await self._generate_participants(context, is_questionnaire)
         self._save_intermediate(intermediate_file, sections, "participants完了")
-        logger.info(f"    -> {len(sections['participants'])} 文字生成")
-        
-        # 5. 謝金について
-        logger.info("  [5/8] 謝金について 生成中...")
-        sections["reward"] = await self._generate_reward(context)
-        self._save_intermediate(intermediate_file, sections, "reward完了")
-        logger.info(f"    -> {len(sections['reward'])} 文字生成")
-        
-        # 6. 実験装置
-        logger.info("  [6/8] 実験装置 生成中...")
-        sections["equipment"] = await self._generate_equipment(context)
-        self._save_intermediate(intermediate_file, sections, "equipment完了")
-        logger.info(f"    -> {len(sections['equipment'])} 文字生成")
-        
-        # 7. 実験手順
-        logger.info("  [7/8] 実験手順 生成中...")
-        sections["procedures"] = await self._generate_procedures(context)
+
+        if not is_questionnaire:
+            # 3-3. 実験装置・実験タスク
+            logger.info("  [4] 実験装置・実験タスク 生成中...")
+            sections["equipment"] = await self._generate_equipment(context)
+            self._save_intermediate(intermediate_file, sections, "equipment完了")
+
+        # 3-3/3-4. 実験手順 / 実施内容
+        logger.info("  [5] 手順・実施内容 生成中...")
+        sections["procedures"] = await self._generate_procedures(context, is_questionnaire)
         self._save_intermediate(intermediate_file, sections, "procedures完了")
-        logger.info(f"    -> {len(sections['procedures'])} 文字生成")
-        
-        # 8. 想定される負荷
-        logger.info("  [8/8] 想定される負荷 生成中...")
-        sections["risks"] = await self._generate_risks(context)
-        self._save_intermediate(intermediate_file, sections, "risks完了")
-        logger.info(f"    -> {len(sections['risks'])} 文字生成")
-        
+
         # DOCXファイル生成
         output_path = self._build_implementation_plan_docx(
             sections=sections,
             context=context,
+            outline=outline,
             output_dir=output_dir
         )
         
@@ -174,70 +220,67 @@ class LLMDocumentGenerator:
             json.dump(data, f, ensure_ascii=False, indent=2)
         logger.info(f"    中間保存: {status}")
     
-    async def _generate_background(self, context: Dict[str, Any]) -> str:
-        """研究背景を生成（10行以上、関連研究を含む）"""
+    async def _generate_overview(self, context: Dict[str, Any]) -> str:
+        """研究の概要を生成（公式参考様式「2.研究の概要」＝半ページ以内で簡略に）"""
         prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-以下の研究の「背景」セクションを執筆してください。
+公式参考様式の「2.研究の概要」セクションを執筆してください。
+これは半ページ以内で、研究の背景・目的・方法・研究対象者の概略を簡潔にまとめるものです。
 
 研究タイトル: {context['research_title']}
 研究概要: {context['brief_description']}
 研究方法: {context['methodology']}
+研究対象者: {context['target_participants']}
 
-【重要な要件】
-★ 最低10行以上（400文字以上）で執筆すること
-★ 入力を拡大解釈し、関連しそうな研究領域・技術・知見を積極的に言及すること
-★ 以下の内容を含めること：
-  1. この研究分野の現状（2-3文）
-  2. 関連する先行研究や技術の動向（3-4文）
-  3. 現在の課題や未解決の問題（2-3文）
-  4. なぜこの研究が必要か、どのようなギャップを埋めるか（2-3文）
+【記述すべき内容（簡略にまとめる）】
+1. 研究の背景と、本研究が取り組む課題（2-3文）
+2. 本研究の目的（何を明らかにするか）（1-2文）
+3. どのような研究対象者に、どのような方法で実施するかの概略（2-3文）
 
 【執筆スタイル】
-- すべて断定形で書く（「〜と考えられる」ではなく「〜である」）
-- 関連研究は具体的な技術名や概念を挙げる（論文引用は不要）
-- 段落間の空行は入れない、連続した文章として記述する
+- 半ページ以内（300-450文字程度）で簡略に記述する
+- 「本研究では〜を明らかにする」のような断定形
+- 段落間の空行は入れない
+- 研究に協力する人は必ず「研究対象者」または「参加者」と表記し、旧来の呼称は使わない
 
 見出しは含めず、本文のみを出力してください。
 """
         return await self._call_llm(prompt)
-    
-    async def _generate_purpose(self, context: Dict[str, Any]) -> str:
-        """研究目的を生成"""
-        prompt = f"""
+
+    async def _generate_experiment_objective(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
+        """実験の目的 / アンケートの目的を生成（3-1）"""
+        if is_questionnaire:
+            prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-以下の研究の「目的」セクションを執筆してください。
+公式参考様式の「3-1.アンケートの目的」セクションを執筆してください。
 
 研究タイトル: {context['research_title']}
 研究概要: {context['brief_description']}
 研究方法: {context['methodology']}
 
 【記述すべき内容】
-1. 本研究の主目的（何を明らかにするか、何を検証するか）
-2. 具体的な検討項目（どの変数を比較するか、どんな関係性を調べるか）
-3. 期待される成果や応用可能性
+1. このアンケート調査で何を把握・測定するか
+2. どのような項目（態度、経験、評価など）を尋ねるか
+3. 得られた回答を何の分析に用いるか
 
 【執筆スタイル】
-- 「本研究の目的は〜を明らかにすることである」のような断定形で開始
-- 2-3段落（200-300文字）で記述
+- 「本アンケートは〜を把握することを目的とする」のような断定形
+- 1-2段落（100-200文字）で記述
 - 段落間の空行は入れない
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
-    
-    async def _generate_experiment_objective(self, context: Dict[str, Any]) -> str:
-        """実験の目的を生成"""
-        prompt = f"""
+        else:
+            prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-「実験の目的」セクションを執筆してください。
-これは「研究目的」とは異なり、具体的な実験手続きの目的を説明するものです。
+公式参考様式の「3-1.実験の目的」セクションを執筆してください。
+これは研究全体の目的とは異なり、具体的な実験手続きの目的を説明するものです。
 
 研究タイトル: {context['research_title']}
 研究方法: {context['methodology']}
@@ -255,35 +298,39 @@ class LLMDocumentGenerator:
 見出しは含めず、本文のみを出力してください。
 """
         return await self._call_llm(prompt)
-    
-    async def _generate_participants(self, context: Dict[str, Any]) -> str:
-        """実験参加者を生成"""
+
+    async def _generate_participants(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
+        """実験参加者 / 研究対象者を生成（3-2）。同意書裏面相当の厚みを持たせる。"""
+        section_label = "研究対象者" if is_questionnaire else "実験参加者"
+        section_number = "3-2.研究対象者" if is_questionnaire else "3-2.実験参加者"
         prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-「実験参加者」セクションを執筆してください。
+公式参考様式の「{section_number}」セクションを執筆してください。
 
 研究タイトル: {context['research_title']}
-対象者概要: {context['target_participants']}
+研究対象者の概要: {context['target_participants']}
 予定参加者数: {context['participant_count']}名
 想定されるリスク: {', '.join(context['risks']) if context['risks'] else '特になし'}
 
-【記述すべき内容（順番通りに）】
-1. 対象者の条件（年齢、所属、健康要件など）と参加者数
-2. 自由意志による参加であること、不参加でも不利益がないこと
-3. 除外基準（リスクに関連する健康状態、既往歴など）
-4. 募集方法（学内掲示、研究室広報など）
+【記述すべき内容（順番通りに、複数文で具体的に）】
+1. {section_label}の条件（年齢、所属、視力・聴力など研究に関係する要件）を「（1）」「（2）」のように列挙し、予定人数を明記する
+2. この研究にこれらの研究対象者が必要である理由（必要性）を簡潔に述べる
+3. 募集方法（WEB公募、学内掲示、研究室広報など）と、別紙の募集文を用いることがあれば言及する
+4. 謝金は大学の謝金規程に基づき支払うこと
+5. 参加は自由意思によること、参加しない場合や途中で取りやめた場合にも不利益がないこと
 
 【執筆スタイル】
-- 「実験参加者は〜とする」のような断定形
-- 3-4段落で記述
+- 「{section_label}は、（1）〜、（2）〜の条件を満たす者〇〇名とする。」のような断定形で開始する
+- 公式参考様式の記載例に倣い、簡潔だが必要事項を網羅した複数文で記述する
 - 段落間の空行は入れない
+- 研究に協力する人は必ず「研究対象者」または「参加者」と表記し、旧来の呼称は使わない
 
 見出しは含めず、本文のみを出力してください。
 """
         return await self._call_llm(prompt)
-    
+
     async def _generate_reward(self, context: Dict[str, Any]) -> str:
         """謝金についてを生成"""
         duration = context.get('duration', 60)
@@ -312,48 +359,73 @@ class LLMDocumentGenerator:
         return await self._call_llm(prompt)
     
     async def _generate_equipment(self, context: Dict[str, Any]) -> str:
-        """実験装置を生成"""
+        """実験装置・実験タスクを生成（3-3）"""
         devices = context.get('devices', [])
         devices_str = ', '.join(devices) if devices else '特になし'
-        
+
         prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-「実験装置」セクションを執筆してください。
+公式参考様式の「3-3.実験装置・実験タスク」セクションを執筆してください。
 
 研究方法: {context['methodology']}
 使用機器: {devices_str}
 
 【記述すべき内容】
-- 使用する装置・機器を「第一に」「第二に」と列挙して説明
-- 各装置の仕様や役割を具体的に記述
-- 安全性に関わる配置や設定があれば記述
+1. 実験で使用する装置・機器を「第一に」「第二に」と列挙して説明する
+   - 各装置の仕様や役割を具体的に記述
+   - 安全性に関わる配置や設定があれば記述
+2. 参加者が取り組む実験タスクの内容（何を提示し、何に回答・反応してもらうか）を具体的に記述する
 
 【執筆スタイル】
-- 「実験装置は以下から構成される。」で開始
+- 「本実験で用いる装置は以下から構成される。」で開始
 - 各装置を「第一に、〜である。」「第二に、〜である。」の形式で説明
+- 続けて実験タスクを「実験タスクとして、参加者は〜する。」のように記述
 - 段落間の空行は入れない
 
 見出しは含めず、本文のみを出力してください。
 """
         return await self._call_llm(prompt)
-    
-    async def _generate_procedures(self, context: Dict[str, Any]) -> str:
-        """実験手順を生成"""
+
+    async def _generate_procedures(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
+        """実験手順（3-4）/ 実施内容（アンケートの場合 3-3）を生成"""
         duration = context.get('duration', 60)
-        
-        prompt = f"""
+        if is_questionnaire:
+            prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}
 
 【タスク】
-「実験手順」セクションを執筆してください。
+公式参考様式の「3-3.実施内容」セクションを執筆してください。
+
+研究方法: {context['methodology']}
+所要時間: 約{duration}分
+
+【記述すべき内容】
+1. アンケートの実施方法（WEBフォーム、紙の質問紙など）と実施の流れ
+2. 研究内容について書面で説明し、同意を得た上で実施すること
+3. 回答に要するおおよその時間
+4. 参加は任意であり、回答を望まない設問には答えなくてよいこと、いつでも中止できること
+
+【執筆スタイル】
+- 「本アンケートに関する説明を書面で行った上で、〜を実施する。」のような断定形で開始
+- 段落間の空行は入れない
+- 研究に協力する人は必ず「研究対象者」または「参加者」と表記し、旧来の呼称は使わない
+
+見出しは含めず、本文のみを出力してください。
+"""
+        else:
+            prompt = f"""
+{IMPLEMENTATION_PLAN_RULES}
+
+【タスク】
+公式参考様式の「3-4.実験手順」セクションを執筆してください。
 
 研究方法: {context['methodology']}
 所要時間: 約{duration}分
 使用機器: {', '.join(context['devices']) if context['devices'] else '特になし'}
 
-【記述すべき手順（サブセクションとして）】
+【記述すべき手順（公式記載例に倣い「本実験に関する説明を書面で行った上で、…」から始める）】
 1. 研究の目的・内容・倫理的配慮の説明と同意取得（約10分）
    - 何を説明するか、参加者の権利をどう伝えるか
 2. 実験準備および姿勢の調整（約5分）
@@ -364,10 +436,12 @@ class LLMDocumentGenerator:
    - 終了確認、体調確認
 
 【執筆スタイル】
+- 「本実験に関する説明を書面で行った上で、」で始める
 - 各手順のサブ見出しは太字で「手順名（約X分）」の形式
 - 実施分担者（研究者）と参加者の行動を具体的に記述
 - いつでも中断可能であること、不快時の対応を明記
 - 段落間の空行は入れない
+- 研究に協力する人は必ず「研究対象者」または「参加者」と表記し、旧来の呼称は使わない
 
 見出しは含めず、本文のみを出力してください。
 """
@@ -424,6 +498,7 @@ class LLMDocumentGenerator:
                     "すべて断定形で書き、曖昧な表現は避けてください。"
                     "専門用語は使用せず、一般の方にも分かりやすい日本語で記述してください。"
                     "である調で統一してください。"
+                    + TERMINOLOGY_RULE
                 )
             )
             return self._post_process(response)
@@ -472,75 +547,49 @@ class LLMDocumentGenerator:
         self,
         sections: Dict[str, str],
         context: Dict[str, Any],
+        outline: List[Dict[str, Any]],
         output_dir: Path
     ) -> Path:
-        """実施計画書DOCXを構築"""
+        """実施計画書DOCXを公式参考様式 260127 の章立てで構築する。"""
         doc = Document()
-        
+
         # スタイル設定
         style = doc.styles['Normal']
         style.font.name = 'Yu Gothic'
         style.font.size = Pt(11)
-        
-        # タイトル（字間あり）
+
+        # タイトル
         title = doc.add_paragraph()
-        title_run = title.add_run('実　施　計　画　書')
+        title_run = title.add_run('実施計画書')
         title_run.bold = True
         title_run.font.size = Pt(14)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+
         doc.add_paragraph()
-        
-        # 課題名
-        self._add_heading(doc, '課題名')
-        doc.add_paragraph(context.get('research_title', ''))
-        
-        # 申請研究の概要
-        self._add_heading(doc, '申請研究の概要')
-        
-        # 背景
-        self._add_subheading(doc, '背景')
-        self._add_text_no_blank(doc, sections.get('background', ''))
-        
-        # 目的
-        self._add_subheading(doc, '目的')
-        self._add_text_no_blank(doc, sections.get('purpose', ''))
-        
-        # 実験方法
-        self._add_heading(doc, '実験方法')
-        
-        # 実験の目的
-        self._add_subheading(doc, '実験の目的')
-        self._add_text_no_blank(doc, sections.get('experiment_objective', ''))
-        
-        # 実験参加者
-        self._add_subheading(doc, '実験参加者')
-        self._add_text_no_blank(doc, sections.get('participants', ''))
-        
-        # 謝金について
-        self._add_subheading(doc, '謝金について')
-        self._add_text_no_blank(doc, sections.get('reward', ''))
-        
-        # 実験装置
-        self._add_subheading(doc, '実験装置')
-        self._add_text_no_blank(doc, sections.get('equipment', ''))
-        
-        # 実験手順
-        self._add_subheading(doc, '実験手順')
-        self._add_text_no_blank(doc, sections.get('procedures', ''))
-        
-        # 想定される負荷
-        self._add_heading(doc, '想定される精神的・物理的負荷')
-        self._add_text_no_blank(doc, sections.get('risks', ''))
-        
+
+        # outline に従って各セクションを描画
+        for item in outline:
+            number = item["number"]
+            label = f"{number}.{item['title']}"
+            if item["level"] == 1:
+                self._add_heading(doc, label)
+            else:
+                self._add_subheading(doc, label)
+
+            key = item.get("key")
+            if key == "research_title":
+                doc.add_paragraph(context.get('research_title', ''))
+            elif key:
+                self._add_text_no_blank(doc, sections.get(key, ''))
+
         # 保存
         output_path = output_dir / "実施計画書.docx"
         doc.save(output_path)
-        
+
         return output_path
-    
+
     def _add_heading(self, doc: Document, text: str):
-        """見出しを追加（太字、前に空行）"""
+        """大見出しを追加（太字、前に空行）"""
         # 見出し前に空行を追加
         doc.add_paragraph()
         p = doc.add_paragraph()
@@ -549,13 +598,14 @@ class LLMDocumentGenerator:
         run.font.size = Pt(12)
         # 段落の後に少しスペース
         p.paragraph_format.space_after = Pt(6)
-    
+
     def _add_subheading(self, doc: Document, text: str):
-        """サブ見出しを追加（太字、わずかにインデント）"""
+        """小見出しを追加（太字、わずかにインデント）"""
         p = doc.add_paragraph()
-        run = p.add_run(f"▶ {text}")
+        run = p.add_run(text)
         run.bold = True
         run.font.size = Pt(11)
+        p.paragraph_format.left_indent = Cm(0.5)
         p.paragraph_format.space_before = Pt(12)
         p.paragraph_format.space_after = Pt(3)
     

@@ -24,6 +24,7 @@ from app.services.preset_manager import load_preset_bundle
 from app.services.form_context_builder import build_generation_context
 from app.services.context_text_enricher import enrich_generation_context_with_llm, flatten_context_for_llm_form_data
 from app.services.generation_validator import error_issues, issue_payload, validate_generation_context
+from app.services.review_summary import build_review_notes, write_review_notes_file
 from app.models.session import Session, SessionStatus, StepStatus
 from app.utils.sse import sse_progress, sse_result, sse_error
 from app.config import app_config, load_user_settings
@@ -181,17 +182,17 @@ async def generate_documents_stream(
             session.steps.generate.preset_snapshot = generation_context.get("meta", {}).get("preset_snapshot", {})
             session.steps.generate.context_snapshot = generation_context
             session.save(SESSIONS_DIR)
+            # 方針: 入力不足でも中断しない。提案値で補完したドラフトを必ず生成し、
+            #       不足・要確認・自動推定はレビュー指摘（review_notes）として返す。
             validation_issues = validate_generation_context(generation_context)
-            validation_errors = error_issues(validation_issues)
-            if validation_errors:
-                session.steps.generate.status = StepStatus.ERROR
-                session.steps.generate.error = "入力不足があります"
-                session.save(SESSIONS_DIR)
-                yield sse_error(
-                    "入力不足があるため、提出用DOCXは生成しません。",
-                    {"issues": issue_payload(validation_issues)},
+            review_notes = build_review_notes(generation_context)
+            if error_issues(validation_issues):
+                yield sse_progress(
+                    step="validation",
+                    status="completed",
+                    message=f"未入力・要確認 {review_notes['counts']['errors'] + review_notes['counts']['warnings']} 件は提案で補完し、レビュー指摘にまとめます。",
+                    detail={"review_notes": review_notes},
                 )
-                return
             merged_form_data["_generation_context"] = generation_context
             official_context = generation_context
             llm_form_data = flatten_context_for_llm_form_data(
@@ -310,9 +311,15 @@ async def generate_documents_stream(
                 action="completed"
             )
             
+            # レビュー指摘リストを出力一式に同梱（人間が確認・修正するための一覧）
+            try:
+                write_review_notes_file(generation_context, output_dir)
+            except Exception as review_exc:  # 指摘出力の失敗で生成を止めない
+                logger.warning(f"レビュー指摘の出力に失敗: {type(review_exc).__name__}: {review_exc}")
+
             # 最終結果
             elapsed = time.time() - start_time
-            
+
             session.steps.generate.status = StepStatus.DONE if len(errors) == 0 else StepStatus.ERROR
             session.steps.generate.output_dir = str(output_dir)
             session.steps.generate.generated_documents = generated
@@ -320,13 +327,14 @@ async def generate_documents_stream(
                 session.steps.generate.error = "; ".join(errors)
             session.status = SessionStatus.COMPLETED if len(errors) == 0 else SessionStatus.IN_PROGRESS
             session.save(SESSIONS_DIR)
-            
+
             yield sse_result({
                 "session_id": session_id,
                 "sessionId": session_id,
                 "status": "completed" if len(errors) == 0 else "partial",
                 "documents_generated": generated,
                 "errors": errors,
+                "review_notes": review_notes,
                 "elapsed_seconds": round(elapsed, 2),
                 "output_dir": str(output_dir)
             })

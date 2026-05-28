@@ -112,6 +112,71 @@ DEFAULT_DATA_DISPOSAL_METHOD = (
     "データの復元ができないように処分する。同意書等の紙媒体についてはシュレッダーにかけた上で破棄する。"
 )
 
+# --- 未入力項目を空欄で残さず「提案値」で補完するための既定文（要レビュー前提のドラフト） ---
+DEFAULT_RECRUITMENT_METHOD = (
+    "学内掲示およびメール・SNS等による公募とする。研究室内で募集する場合は、"
+    "参加・不参加が成績評価や指導上の関係に影響しないことを明示し、参加の自由意思を担保する。"
+)
+DEFAULT_PARTICIPANT_GENDER = "男女指定しない"
+DEFAULT_ETHICS_GUIDELINE = (
+    "本研究は医学系研究には該当しない。日本心理学会倫理規程等の関連する学会の倫理規程、"
+    "および筑波大学の研究倫理に関する規程に準拠して実施する。"
+)
+
+# 同意書裏面②（研究対象者の必要性・リスクと安全性・危険回避の方法）向けの安全配慮の既定文。
+# リスク対策が未入力でも、専門外の研究対象者にも分かる安全配慮・緊急時対応の最低限の記述を担保する。
+DEFAULT_SAFETY_MEASURES = (
+    "研究対象者の負担を軽減するため、課題は短い単位で実施し、実験の途中であっても任意の時点で"
+    "休憩を取ることができるようにする。疲労、不快感、体調不良を感じた場合には、研究対象者自身の"
+    "判断で直ちに実験を中断または終了でき、途中で取りやめた場合にも不利益を受けることはない。"
+    "実験に用いる機器および配線は、転倒や接触の危険が生じないように配置し、共用する機器は必要に"
+    "応じて清掃または消毒を行う。研究参加中に体調不良や強い不快感が生じた場合には、直ちに研究"
+    "担当者へ申し出ることができ、研究担当者は必要に応じて実験を中断し、休憩または医療機関への"
+    "相談を案内するなど、緊急時に適切に対応する。"
+)
+
+# 健康被害の補償についての既定文（国立大学法人総合損害保険＝国大協保険に加入している前提）。
+DEFAULT_COMPENSATION_TEXT = (
+    "本研究の参加に起因して健康被害が生じた場合には、国立大学法人総合損害保険（国大協保険）に"
+    "より対応する。"
+)
+
+
+def _build_safety_measures(
+    risks: list[Any],
+    countermeasures: list[Any],
+    invasiveness: bool,
+) -> str:
+    """安全性・危険回避の方法をまとめた説明文を組み立てる。
+
+    同意書裏面②（研究対象者の必要性、リスクと安全性、危険回避の方法）に流し込むための、
+    専門外の研究対象者にも分かりやすい複数文の記述。リスク対策が入力されていればそれを
+    取り込み、常に休憩・中断の自由、緊急時対応などの安全配慮を併記する。
+    """
+    sentences: list[str] = []
+    if not invasiveness:
+        sentences.append(
+            "本研究で行う課題は、研究対象者の身体への侵襲を伴うものではなく、"
+            "通常の作業の範囲を大きく超えるものではない。"
+        )
+    countermeasure_texts = [str(item).strip() for item in countermeasures if str(item).strip()]
+    if countermeasure_texts:
+        sentences.append(
+            "想定されるリスクへの対策として、" + "、".join(countermeasure_texts) + "を行う。"
+        )
+    sentences.append(DEFAULT_SAFETY_MEASURES)
+    return "".join(sentences)
+
+
+def _build_compensation_text(has_compensation: bool, no_compensation_reason: str) -> str:
+    """健康被害の補償に関する説明文を組み立てる。"""
+    if has_compensation:
+        return DEFAULT_COMPENSATION_TEXT
+    reason = str(no_compensation_reason or "").strip()
+    if reason:
+        return f"本研究では健康被害に対する補償は行わない（理由：{reason}）。"
+    return ""
+
 
 def _domain_head_from_submission(submission_preset: Any) -> tuple[str, str]:
     if not submission_preset:
@@ -237,6 +302,12 @@ def build_generation_context(
     application_type = _pick(form_data, "applicationType", "app_config.applicationType", "application.type", default="new")
     retention_period_choice = _pick(form_data, "retentionPeriod", "app_config.retentionPeriod", default="10years")
 
+    recording_enabled = _to_bool(_pick(form_data, "videoRecording", "recordingEnabled", "app_config.videoRecording", "app_config.recordingEnabled", default=False))
+    recording_types = _normalize_list(_pick(form_data, "recordingTypes", "app_config.recordingTypes", default=[]))
+    if recording_enabled and not recording_types:
+        # 録画ありで種別未入力なら提案値で補完（空欄にしない）
+        recording_types = ["実験中の参加者の映像"]
+
     context = {
         "meta": {
             "generated_at": datetime.now().isoformat(),
@@ -316,7 +387,8 @@ def build_generation_context(
             "exclusion_criteria": _normalize_list(_pick(form_data, "exclusionCriteria", default=[])),
             "count": participant_count,
             "count_rationale": _pick(form_data, "participantsJustification", "participant_count_reason"),
-            "recruitment_method": _pick(form_data, "recruitmentMethod", default=""),
+            "recruitment_method": _pick(form_data, "recruitmentMethod", default=DEFAULT_RECRUITMENT_METHOD),
+            "gender": _pick(form_data, "participantGender", "gender", "app_config.participantGender", default=DEFAULT_PARTICIPANT_GENDER),
         },
         "participant_list": {
             "planned_count": participant_count,
@@ -328,8 +400,8 @@ def build_generation_context(
         "risks": _normalize_list(_pick(form_data, "risks", default=[])),
         "risk_countermeasures": _normalize_list(_pick(form_data, "riskCountermeasures", default=[])),
         "recording": {
-            "enabled": _to_bool(_pick(form_data, "videoRecording", "recordingEnabled", "app_config.videoRecording", "app_config.recordingEnabled", default=False)),
-            "types": _normalize_list(_pick(form_data, "recordingTypes", "app_config.recordingTypes", default=[])),
+            "enabled": recording_enabled,
+            "types": recording_types,
             "public_release": _to_bool(_pick(form_data, "recordingPublicRelease", "app_config.recordingPublicRelease", default=False)),
         },
         "ethics": {
@@ -338,6 +410,7 @@ def build_generation_context(
             "conflict_of_interest_partner": _pick(form_data, "conflictOfInterestPartner", "app_config.conflictOfInterestPartner", "ethics.conflict_of_interest_partner", default=""),
             "invasiveness": _to_bool(_pick(form_data, "invasiveness", "app_config.invasiveness", "ethics.invasiveness", default=False)),
             "invasiveness_details": _pick(form_data, "invasivenessDetails", "app_config.invasivenessDetails", "ethics.invasiveness_details", default=""),
+            "guideline": _pick(form_data, "ethicsGuideline", "app_config.ethicsGuideline", "ethics.guideline", default=DEFAULT_ETHICS_GUIDELINE),
         },
         "data": {
             "types": _normalize_list(_pick(form_data, "dataTypes", "app_config.dataTypes", default=[])),
@@ -351,6 +424,38 @@ def build_generation_context(
             "disposal_method": _pick(form_data, "disposalMethod", "app_config.disposalMethod", default=DEFAULT_DATA_DISPOSAL_METHOD),
             "disclosure_to_participant": _to_bool(_pick(form_data, "dataDisclosureToParticipant", default=True), True),
             "disclosure_to_proxy": _to_bool(_pick(form_data, "dataDisclosureToProxy", default=False)),
+        },
+        "safety": {
+            "measures": _pick(
+                form_data,
+                "safetyMeasures",
+                "app_config.safetyMeasures",
+                "safety.measures",
+                default=_build_safety_measures(
+                    _normalize_list(_pick(form_data, "risks", default=[])),
+                    _normalize_list(_pick(form_data, "riskCountermeasures", default=[])),
+                    _to_bool(_pick(form_data, "invasiveness", "app_config.invasiveness", "ethics.invasiveness", default=False)),
+                ),
+            ),
+            "compensation_text": _pick(
+                form_data,
+                "compensationText",
+                "app_config.compensationText",
+                "safety.compensation_text",
+                default=_build_compensation_text(
+                    _to_bool(
+                        _pick(
+                            form_data,
+                            "hasCompensation",
+                            "app_config.hasCompensation",
+                            "safety.has_compensation",
+                            default=True,
+                        ),
+                        True,
+                    ),
+                    _pick(form_data, "noCompensationReason", "app_config.noCompensationReason", "safety.no_compensation_reason", default=""),
+                ),
+            ),
         },
         "consent": {
             "target_age": _pick(form_data, "consentTargetAge", default="18歳以上"),

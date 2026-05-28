@@ -111,6 +111,45 @@ def test_official_docx_templates_render_required_values(
         assert "029-000-0000" in text
 
 
+def test_consent_form_fills_back_side_overview(generation_context: dict, output_dir: Path) -> None:
+    """同意書裏面（別紙「研究の概要について」①②③）が context から流し込まれること。"""
+    path = render_official_template("consent_form", generation_context, output_dir / "consent_form.docx")
+    text = document_text(path)
+
+    # ① 研究の概要：目的・方法・参加者条件・所要時間・実験手順
+    assert "Purpose" in text  # [目的]
+    assert "Task and questionnaire" in text  # [方法] / 実験手順
+    assert "Adult participants" in text  # [参加者条件]
+    assert "【実験手順】" in text  # procedures が裏面に載る
+    assert "約60分" in text  # [所要時間]
+    # ③ 個人情報保護：任意性の固定文と撤回期限
+    assert "研究への参加は任意であり" in text
+    assert "同意書署名の日から90日後" in text
+    # テンプレに残っていた旧サンプル本文（前任者の管理方法説明）が消えていること
+    assert "特定のPCのみを用います" not in text
+
+
+def test_application_form_uses_260422_layout(generation_context: dict, output_dir: Path) -> None:
+    """01-1 申請書が 260422 新公式（1.x/2.x/3.x…）として描画されること。"""
+    path = render_official_template("application_form", generation_context, output_dir / "application_form.docx")
+    text = document_text(path)
+
+    # 新章番号の見出しが存在し、旧 1〜14 様式に作り替えられていないこと
+    assert "１研究計画の概要" in text
+    assert "2　取得データに関する情報" in text
+    assert "3. 実験対象者" in text
+    # チェックボックスが排他的に設定されること（新規申請・単独施設・侵襲なし）
+    assert "■新規申請" in text
+    assert "■a. 筑波大学単独施設での研究" in text
+    assert "侵襲性（□軽微でない　□軽微　■無）" in text
+    # 値が所定位置に入ること
+    assert "1.1　課題名　Official Render Test" in text
+    assert "3.1 期間内に実施する対象者の人数の見積もり：10人" in text
+    assert "Taro Yamada" in text  # 1.4 実施分担者として挿入
+    # 旧様式の番号体系が残っていないこと
+    assert "１４　実施責任者の問い合わせ先" not in text
+
+
 def test_participant_list_keeps_only_official_sheet_and_removes_prefilled_personal_data(
     generation_context: dict,
     output_dir: Path,

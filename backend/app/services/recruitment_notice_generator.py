@@ -12,6 +12,14 @@ from typing import Dict, Any, List
 from datetime import datetime
 
 
+# 用語制約（全 generator 共通）: 募集案内文でも研究に協力する人の呼称は「研究対象者」「参加者」に統一する。
+# 本ファイルは固定テンプレートで本文を組み立てるため、見出し・固定文には「（実験）参加者」のみを用いる。
+TERMINOLOGY_RULE = (
+    "研究に協力する人を指す場合は、必ず「研究対象者」または「参加者」と表記すること。"
+    "それ以外の旧来の呼称（健康状態を含意する語や、実験の語を含む対象側の旧来の呼称など）は使用しないこと。"
+)
+
+
 def generate_recruitment_notice(
     form_data: Dict[str, Any],
     output_dir: Path,

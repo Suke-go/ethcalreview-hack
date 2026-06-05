@@ -100,7 +100,12 @@ class ExplanationGenerator:
     def _build_context(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """フォームデータからコンテキストを構築"""
         lab_info = self.defaults.get("lab_info", {})
-        
+        # 問い合わせ先（研究責任者）は設定/プリセット由来で context に解決済み。
+        # flatten 経由で渡される principalInvestigator を最優先し、無ければ lab_defaults を使う。
+        pi = form_data.get("principalInvestigator") or form_data.get("principal_investigator") or {}
+        if not isinstance(pi, dict):
+            pi = {}
+
         devices = form_data.get("devices", [])
         risks = form_data.get("risks", [])
         risk_countermeasures = form_data.get("riskCountermeasures", form_data.get("risk_countermeasures", []))
@@ -118,14 +123,14 @@ class ExplanationGenerator:
             "risk_countermeasures": risk_countermeasures,
             "risks_with_countermeasures": risks_with_countermeasures,
             "reward": form_data.get("rewardAmount", form_data.get("reward_amount", 0)),
-            # lab_defaultsから問い合わせ先を取得
-            "pi_name": lab_info.get("pi_name", ""),
-            "pi_affiliation": lab_info.get("pi_affiliation", ""),
-            "pi_position": lab_info.get("pi_position", ""),
-            "pi_email": lab_info.get("pi_email", ""),
-            "pi_phone": lab_info.get("pi_phone", ""),
-            "ethics_committee": self.defaults.get("ethics_committee", {}).get("name", ""),
-            "ethics_phone": self.defaults.get("ethics_committee", {}).get("phone", ""),
+            # 問い合わせ先（研究責任者）: context 解決済みの principalInvestigator を最優先、lab_defaults はフォールバック
+            "pi_name": pi.get("name") or lab_info.get("pi_name", ""),
+            "pi_affiliation": pi.get("affiliation") or lab_info.get("pi_affiliation", ""),
+            "pi_position": pi.get("position") or lab_info.get("pi_position", ""),
+            "pi_email": pi.get("email") or lab_info.get("pi_email", ""),
+            "pi_phone": pi.get("phone") or pi.get("tel") or lab_info.get("pi_phone", ""),
+            "ethics_committee": form_data.get("ethicsCommittee") or self.defaults.get("ethics_committee", {}).get("name", ""),
+            "ethics_phone": form_data.get("ethicsCommitteePhone") or self.defaults.get("ethics_committee", {}).get("phone", ""),
         }
     
     def _format_risks_with_countermeasures(self, risks: List[str], countermeasures: List[str]) -> str:

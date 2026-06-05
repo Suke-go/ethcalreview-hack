@@ -47,10 +47,54 @@ class CapturingLLMClient:
         return {}
 
 
+class EmptyLLMClient:
+    """常に空本文を返すモック（推論モデルの空応答を模擬）。"""
+
+    async def generate_content_async(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+        return ""
+
+    async def generate_json(self, prompt: str, system_instruction: Optional[str] = None) -> dict[str, Any]:
+        return {}
+
+
 def _assert_terminology(text: str, label: str) -> None:
     assert REQUIRED_TERM in text, f"{label}: '{REQUIRED_TERM}' を含むこと"
     for term in FORBIDDEN_TERMS:
         assert term not in text, f"{label}: '{term}' を含まないこと"
+
+
+def test_implementation_plan_sections_fallback_when_llm_empty() -> None:
+    """LLMが空応答でも 3-1〜3-4・概要が空にならず、決定的フォールバックで埋まること。
+
+    （以前は _call_llm が例外/空で "" を返し、3-1 実験の目的・3-2 実験参加者・
+    3-3 実験装置が空欄のまま出力されていた。）
+    """
+    gen = LLMDocumentGenerator(EmptyLLMClient(), lab_defaults={})
+    context = {
+        "research_title": "字幕可視化の検証",
+        "brief_description": "韻律を字幕に反映し理解を助けるか検証する",
+        "methodology": "短い映像を4条件で視聴し認知負荷を測定する",
+        "target_participants": "英語を第二言語とする18歳以上の成人",
+        "duration": 60,
+        "participant_count": 64,
+        "devices": ["パソコン", "ヘッドホン"],
+        "risks": ["眼精疲労"],
+        "risk_countermeasures": ["適宜休憩"],
+        "reward_amount": 1000,
+    }
+    sections = {
+        "objective": asyncio.run(gen._generate_experiment_objective(context)),
+        "participants": asyncio.run(gen._generate_participants(context)),
+        "equipment": asyncio.run(gen._generate_equipment(context)),
+        "procedures": asyncio.run(gen._generate_procedures(context)),
+        "overview": asyncio.run(gen._generate_overview(context)),
+    }
+    for name, text in sections.items():
+        assert text and text.strip(), f"{name} がフォールバックで埋まること"
+        for term in FORBIDDEN_TERMS:
+            assert term not in text, f"{name}: '{term}' を含まないこと"
+    # 参加者フォールバックは予定人数を反映する
+    assert "64名" in sections["participants"]
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +123,68 @@ def test_explanation_prompt_terminology() -> None:
 
 def test_recruitment_terminology_rule() -> None:
     _assert_terminology(rnotice.TERMINOLOGY_RULE, "recruitment TERMINOLOGY_RULE")
+
+
+def test_explanation_contact_uses_principal_investigator() -> None:
+    """参加者説明書の問い合わせ先が form_data の principalInvestigator から埋まること。
+
+    （以前は lab_defaults.lab_info からのみ取得しており、設定由来の研究責任者が
+    反映されず「■ 研究責任者」が空欄になっていた。）
+    """
+    generator = ExplanationGenerator(llm_client=None, lab_defaults={})
+    form_data = {
+        "title": "字幕に関する研究",
+        "principalInvestigator": {
+            "name": "善甫 啓一",
+            "affiliation": "筑波大学 システム情報系",
+            "position": "准教授",
+            "email": "zempo@example.ac.jp",
+            "phone": "029-000-0000",
+        },
+        "ethicsCommittee": "筑波大学 システム情報系 研究倫理委員会",
+        "ethicsCommitteePhone": "029-111-1111",
+    }
+    context = generator._build_context(form_data)
+    assert context["pi_name"] == "善甫 啓一"
+    assert context["pi_affiliation"] == "筑波大学 システム情報系"
+    assert context["pi_position"] == "准教授"
+    assert context["pi_email"] == "zempo@example.ac.jp"
+    assert context["pi_phone"] == "029-000-0000"
+    assert context["ethics_committee"] == "筑波大学 システム情報系 研究倫理委員会"
+    assert context["ethics_phone"] == "029-111-1111"
+
+
+def test_explanation_contact_falls_back_to_lab_defaults() -> None:
+    """principalInvestigator が無い場合は lab_defaults にフォールバックすること。"""
+    generator = ExplanationGenerator(
+        llm_client=None,
+        lab_defaults={"lab_info": {"pi_name": "予備 太郎", "pi_affiliation": "予備所属"}},
+    )
+    context = generator._build_context({"title": "x"})
+    assert context["pi_name"] == "予備 太郎"
+    assert context["pi_affiliation"] == "予備所属"
+
+
+def test_flatten_passes_resolved_contact() -> None:
+    """flatten が context の解決済み研究責任者・倫理委員会を form_data へ渡すこと。"""
+    from app.services.context_text_enricher import flatten_context_for_llm_form_data
+
+    context = {
+        "research": {"title": "t"},
+        "principal_investigator": {
+            "name": "善甫 啓一",
+            "affiliation": "筑波大学 システム情報系",
+            "position": "准教授",
+            "email": "zempo@example.ac.jp",
+            "tel": "029-000-0000",
+        },
+        "submission": {"committee_name": "倫理委員会", "office_tel": "029-111-1111"},
+    }
+    flat = flatten_context_for_llm_form_data({}, context)
+    assert flat["principalInvestigator"]["name"] == "善甫 啓一"
+    assert flat["principalInvestigator"]["phone"] == "029-000-0000"
+    assert flat["ethicsCommittee"] == "倫理委員会"
+    assert flat["ethicsCommitteePhone"] == "029-111-1111"
 
 
 def test_llm_document_generator_prompts_terminology() -> None:

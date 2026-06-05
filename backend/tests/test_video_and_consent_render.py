@@ -8,7 +8,11 @@ from docx import Document
 
 from app.config import app_config, load_user_settings
 from app.services.form_context_builder import build_generation_context
-from app.services.official_docx_renderer import all_paragraphs, render_official_template
+from app.services.official_docx_renderer import (
+    all_paragraphs,
+    build_consent_overview_sections,
+    render_official_template,
+)
 from app.services.preset_manager import load_preset_bundle
 
 
@@ -147,3 +151,48 @@ def test_forbidden_terms_not_in_consent(generation_context: dict, output_dir: Pa
         # レンダラが挿入する本文に禁止語を含めない（テンプレ固定文は対象外だが念のため確認）
         # ここではレンダラ生成部由来の文を中心に確認する
         assert "健常者" not in text
+
+
+def _method_lines(context: dict) -> list[str]:
+    sections = {s["anchor"]: s["lines"] for s in build_consent_overview_sections(context)}
+    return sections["[方法]"]
+
+
+def test_consent_procedures_show_per_step_minutes() -> None:
+    # 同意書裏面の【実験手順】で、各手順に所要時間（約N分）が併記される
+    context = {
+        "research": {"method": "短い映像を視聴し回答する。", "purpose": "p", "significance": "s"},
+        "participants": {"criteria": "成人"},
+        "reward": {"estimated_minutes": 60},
+        "procedures": ["研究説明と同意取得", "機器の準備", "本試行", "終了処理"],
+        "procedure_minutes": [10, 5, 40, 5],
+    }
+    lines = _method_lines(context)
+    assert "1. 研究説明と同意取得（約10分）" in lines
+    assert "3. 本試行（約40分）" in lines
+
+
+def test_consent_procedures_without_minutes_unchanged() -> None:
+    # procedure_minutes が無ければ従来どおり時間表記なし（後方互換）
+    context = {
+        "research": {"method": "短い映像を視聴し回答する。"},
+        "participants": {"criteria": "成人"},
+        "reward": {"estimated_minutes": 60},
+        "procedures": ["研究説明と同意取得", "本試行"],
+    }
+    lines = _method_lines(context)
+    assert "1. 研究説明と同意取得" in lines
+    assert not any("（約" in line for line in lines)
+
+
+def test_consent_procedures_minutes_length_mismatch_ignored() -> None:
+    # 手順数と分数の要素数が一致しない場合は安全側で時間を付けない
+    context = {
+        "research": {"method": "m"},
+        "participants": {"criteria": "成人"},
+        "reward": {"estimated_minutes": 60},
+        "procedures": ["A", "B", "C"],
+        "procedure_minutes": [10, 5],
+    }
+    lines = _method_lines(context)
+    assert not any("（約" in line for line in lines)

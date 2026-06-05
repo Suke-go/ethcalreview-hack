@@ -39,6 +39,14 @@ class DocumentType(str, Enum):
     POST_QUESTIONNAIRE = "post_questionnaire"  # 事後アンケート
     RECRUITMENT = "recruitment"  # 募集シート
     DEVICE_DESCRIPTION = "device_description"  # 新規開発デバイス説明書
+    # 公式様式（official_document_service.OFFICIAL_OUTPUTS と対応）。
+    # default_official_document_types() がこれらを返すため、enum 側にも持たせて
+    # DocumentType(doc_type) の変換が落ちないようにする（is_official_document_type 分岐で描画）。
+    VIDEO_CONSENT = "video_consent"  # ビデオ画像公開承諾書
+    HONORARIUM_REQUEST = "honorarium_request"  # 謝金・旅費実施伺（管理様式・同梱）
+    HONORARIUM_PAYMENT_REQUEST = "honorarium_payment_request"  # 謝金支出依頼書（管理様式・同梱）
+    PLAN_CHANGE_NOTIFICATION = "plan_change_notification"  # 研究倫理実施計画変更届（参考様式）
+    IMPLEMENTATION_REPORT = "implementation_report"  # 実施報告書（参考様式）
 
 
 class MissingInfo(BaseModel):

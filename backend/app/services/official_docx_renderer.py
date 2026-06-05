@@ -226,6 +226,26 @@ def join_text(value: Any, default: str = "") -> str:
     return str(value)
 
 
+def _strip_sentence_end(text: str) -> str:
+    """文中に埋め込めるよう、末尾の句点（。．.）を除いて前後の空白を整える。"""
+    return str(text).strip().rstrip("。．.").strip()
+
+
+def join_inline(value: Any, default: str = "") -> str:
+    """リスト/文字列を読点で連結する。各項目が文（。終わり）でも文中に置けるよう末尾の句点を除く。
+
+    LLM はリスク・対策・手順などを文末「。」付きの文で返すことがある。これを素朴に
+    "、".join すると「…する。、…」のように句点と読点が重なって体裁が崩れる。本関数は
+    各項目の末尾句点を落としてから連結するため、文中への差し込みでも崩れない。
+    """
+    if value in (None, "", [], {}):
+        return default
+    if isinstance(value, list):
+        cleaned = [_strip_sentence_end(item) for item in value if item not in (None, "") and str(item).strip()]
+        return "、".join(item for item in cleaned if item)
+    return _strip_sentence_end(value)
+
+
 def format_reiwa_date(now: datetime | None = None) -> str:
     now = now or datetime.now()
     reiwa_year = now.year - 2018
@@ -257,6 +277,25 @@ def format_amount(value: Any, suffix: str = "円") -> str:
     if suffix and text.replace(",", "").isdigit() and suffix not in text:
         return f"{int(text.replace(',', '')):,}{suffix}"
     return text
+
+
+def _count_number(value: Any) -> int | None:
+    """予定人数を整数として取り出す。未入力/0/数値でない場合は None。"""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return int(value) if value > 0 else None
+    if isinstance(value, str):
+        digits = value.strip().replace(",", "")
+        if digits.isdigit() and int(digits) > 0:
+            return int(digits)
+    return None
+
+
+def count_label(value: Any, suffix: str = "名", undecided: str = "（未定）") -> str:
+    """予定人数の表示文字列。未入力/0 のときは『0名』ではなく『（未定）』を返す。"""
+    number = _count_number(value)
+    return f"{number}{suffix}" if number is not None else undecided
 
 
 def render_application_form(document: DocumentType, context: dict[str, Any]) -> None:
@@ -444,8 +483,9 @@ def render_application_form(document: DocumentType, context: dict[str, Any]) -> 
     update_first_contains(paragraphs, "対象者の特定（□できる", f"対象者の特定（{cb(identifiable)}できる　{cb(not identifiable)}できない）")
 
     # ---- 3 実験対象者 ----
-    count = first_nonempty(participants.get("count"))
-    update_first_contains(paragraphs, "人数の見積もり", f"3.1 期間内に実施する対象者の人数の見積もり：{count}人")
+    # 人数が未確定（0/未入力）のときは「0人」ではなく「（未定。確定後に記入）」を表示する。
+    count_disp = count_label(participants.get("count"), suffix="人", undecided="（未定。確定後に記入）")
+    update_first_contains(paragraphs, "人数の見積もり", f"3.1 期間内に実施する対象者の人数の見積もり：{count_disp}")
     update_first_contains(paragraphs, "妥当性の根拠", f"　　妥当性の根拠：{first_nonempty(participants.get('count_rationale'))}")
     inclusion = participants.get("inclusion_criteria") or []
     exclusion = participants.get("exclusion_criteria") or []
@@ -473,9 +513,9 @@ def render_application_form(document: DocumentType, context: dict[str, Any]) -> 
     update_first_contains(paragraphs, "3.5 募集方法", f"3.5 募集方法　{first_nonempty(participants.get('recruitment_method'))}")
 
     # ---- 4 研究に伴う危害発生の可能性・安全性 ----
-    harm = "、".join(str(item) for item in risks)
+    harm = join_inline(risks)
     if countermeasures:
-        harm = (harm + "。回避策：" if harm else "回避策：") + "、".join(str(item) for item in countermeasures)
+        harm = (harm + "。回避策：" if harm else "回避策：") + join_inline(countermeasures)
     update_first_contains(paragraphs, "研究に伴う危害発生の可能性・安全性", f"4. 研究に伴う危害発生の可能性・安全性　{harm}")
     update_first_contains(paragraphs, "新規開発デバイスの試用", f"4.1 新規開発デバイスの試用が {cb(False)}有 {cb(True)}無")
     update_first_contains(paragraphs, "不可避的な侵襲の", f"4.2 不可避的な侵襲の({cb(invasiveness)}有　{cb(not invasiveness)}無)")
@@ -603,6 +643,7 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     data = get_path(context, "data", {})
     safety = get_path(context, "safety", {})  # 将来拡張: 補償・安全対策の詳細
     procedures = get_path(context, "procedures", []) or []
+    procedure_minutes = get_path(context, "procedure_minutes", []) or []
     risks = get_path(context, "risks", []) or []
     countermeasures = get_path(context, "risk_countermeasures", []) or []
 
@@ -616,10 +657,19 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
         participant_lines.append("除外基準：" + "、".join(str(item) for item in exclusion))
 
     # [方法]（+ 実験手順 procedures）
+    #   各手順に所要時間の目安（procedure_minutes）があれば「（約N分）」を併記する。
+    #   要素数が一致するときのみ採用し、手順文に既に「分）」表記があれば二重表示を避ける。
     method_lines = _nonempty_lines(research.get("method"))
     if procedures:
+        use_minutes = len(procedure_minutes) == len(procedures)
         method_lines.append("【実験手順】")
-        method_lines.extend(f"{index}. {proc}" for index, proc in enumerate(procedures, 1))
+        for index, proc in enumerate(procedures, 1):
+            proc_text = str(proc)
+            minutes = procedure_minutes[index - 1] if use_minutes else None
+            if minutes and "分）" not in proc_text and "分)" not in proc_text:
+                method_lines.append(f"{index}. {proc_text}（約{minutes}分）")
+            else:
+                method_lines.append(f"{index}. {proc_text}")
 
     # [所要時間]
     minutes = first_nonempty(reward.get("estimated_minutes"))
@@ -628,9 +678,9 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     # [考えられるリスク]
     risk_lines: list[str] = []
     if risks:
-        risk_lines.append("、".join(str(item) for item in risks))
+        risk_lines.append(join_inline(risks))
     if countermeasures:
-        risk_lines.append("（対策）" + "、".join(str(item) for item in countermeasures))
+        risk_lines.append("（対策）" + join_inline(countermeasures))
 
     # [謝礼]
     if to_bool(reward.get("enabled")):
@@ -655,13 +705,14 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     criteria_text = first_nonempty(participants.get("criteria"))
 
     # (1) 研究対象者の必要性：なぜこの研究対象者が必要か
+    #     criteria は LLM が「…を対象とする。」のような文で返すことがあるため、文中に素朴に
+    #     差し込むと「…とする。に研究へ」のように崩れる。対象者は独立した文として記述する。
     necessity_sentences: list[str] = []
     if purpose:
         necessity_sentences.append(_end_sentence(f"本研究では、{purpose}"))
     if criteria_text:
-        necessity_sentences.append(
-            f"そのため、{criteria_text}に研究へご参加いただき、その反応や回答を分析する必要があります。"
-        )
+        necessity_sentences.append(_end_sentence(f"本研究の研究対象者は、{_strip_sentence_end(criteria_text)}"))
+        necessity_sentences.append("これらの研究対象者にご参加いただき、その反応や回答を分析する必要があります。")
     if necessity:
         necessity_sentences.append(_end_sentence(f"研究対象者を必要とする理由は、{necessity}"))
     if necessity_sentences:
@@ -671,7 +722,7 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     if risks:
         necessity_lines.append(
             "研究への参加に伴い想定される負担・リスクとして、"
-            + "、".join(str(item) for item in risks)
+            + join_inline(risks)
             + "が生じる可能性があります。"
         )
 
@@ -684,8 +735,8 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     elif countermeasures:
         necessity_lines.append(
             "これらの負担を軽減するため、"
-            + "、".join(str(item) for item in countermeasures)
-            + "を行います。"
+            + join_inline(countermeasures)
+            + "等の対応を行います。"
             "研究参加中はいつでも休憩を取ることができ、不快感や体調不良を感じた場合は研究対象者自身の判断で直ちに中断または終了することができます。"
             "研究参加を取りやめた場合にも、不利益を受けることはありません。"
         )
@@ -985,12 +1036,14 @@ def render_honorarium_rationale(document: DocumentType, context: dict[str, Any])
         if value
     )
     target = first_nonempty(participants.get("criteria"))
-    count = first_nonempty(participants.get("count"))
+    # 予定人数が未確定（0/未入力）のときは「0名/0円」を出さず「未定」表記にする
+    # （「（予定人数：…）」の中に置くため括弧なしの『未定』を使う）。
+    count_disp = count_label(participants.get("count"), undecided="未定")
     minutes = first_nonempty(reward.get("estimated_minutes"))
     amount = format_amount(reward.get("amount"))
     hourly_rate = format_amount(reward.get("hourly_rate"), "円/時間")
-    total_amount = format_amount(reward.get("total_amount"))
-    procedures = join_text(get_path(context, "procedures", []), first_nonempty(research.get("method")))
+    total_amount = format_amount(reward.get("total_amount")) if _count_number(participants.get("count")) else "（予定人数確定後に算出）"
+    procedures = join_inline(get_path(context, "procedures", []), _strip_sentence_end(first_nonempty(research.get("method"))))
 
     # 「本学教員」ラベル（申請者ブロック）直下の「（○○系　○○域）」欄を、所属・職名・氏名で埋める。
     # 本文の「本学教員の研究費について…」が occurrence 1 なので、ラベルは occurrence 2。
@@ -1033,7 +1086,7 @@ def render_honorarium_rationale(document: DocumentType, context: dict[str, Any])
         paragraphs,
         "【謝金対象者】",
         [
-            (1, f"　{target}（予定人数：{count}名）"),
+            (1, f"　{target}（予定人数：{count_disp}）"),
         ],
     )
     set_relative_group(
@@ -1049,7 +1102,7 @@ def render_honorarium_rationale(document: DocumentType, context: dict[str, Any])
         "謝金支出案",
         [
             (1, f"　謝金形式：{first_nonempty(reward.get('type'))}"),
-            (2, f"　単価：{amount} × 予定人数：{count}名 = 総額：{total_amount}"),
+            (2, f"　単価：{amount} × 予定人数：{count_disp} = 総額：{total_amount}"),
             (3, f"　算出根拠：{first_nonempty(reward.get('rationale'), '筑波大学の謝金単価および研究計画上の所要時間に基づき算出する。')}"),
         ],
     )

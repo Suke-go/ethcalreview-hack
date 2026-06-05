@@ -122,6 +122,9 @@ DEFAULT_ETHICS_GUIDELINE = (
     "本研究は医学系研究には該当しない。日本心理学会倫理規程等の関連する学会の倫理規程、"
     "および筑波大学の研究倫理に関する規程に準拠して実施する。"
 )
+# 議論ログ等から1セッションの所要時間が読み取れないことがある。空欄/0 で謝礼が壊れるのを防ぐため、
+# 標準的な所要時間（分）を仮置きする。仮置きした事実は assumption として可視化する。
+DEFAULT_DURATION_MINUTES = 60
 
 # 同意書裏面②（研究対象者の必要性・リスクと安全性・危険回避の方法）向けの安全配慮の既定文。
 # リスク対策が未入力でも、専門外の研究対象者にも分かる安全配慮・緊急時対応の最低限の記述を担保する。
@@ -159,10 +162,12 @@ def _build_safety_measures(
             "本研究で行う課題は、研究対象者の身体への侵襲を伴うものではなく、"
             "通常の作業の範囲を大きく超えるものではない。"
         )
-    countermeasure_texts = [str(item).strip() for item in countermeasures if str(item).strip()]
+    # 対策は LLM が文末「。」付きの文で返すことがある。素朴に読点連結すると「…する。、…」と
+    # 句点と読点が重なって体裁が崩れるため、各項目の末尾句点を落としてから連結する。
+    countermeasure_texts = [str(item).strip().rstrip("。．.").strip() for item in countermeasures if str(item).strip()]
     if countermeasure_texts:
         sentences.append(
-            "想定されるリスクへの対策として、" + "、".join(countermeasure_texts) + "を行う。"
+            "想定されるリスクへの対策として、" + "、".join(countermeasure_texts) + "等の対応を行う。"
         )
     sentences.append(DEFAULT_SAFETY_MEASURES)
     return "".join(sentences)
@@ -284,6 +289,35 @@ def build_generation_context(
         default=(budget_preset.hourly_rate if budget_preset and budget_preset.hourly_rate is not None else settings.budget.hourly_rate),
     )
     participant_count = _pick(form_data, "expectedParticipants", "participant_count", default=None)
+
+    # --- 所要時間・謝礼の提案補完（空欄/0 を避け、assumption として後で可視化する） ---
+    builder_assumptions: list[dict[str, Any]] = []
+
+    estimated_minutes_number = _to_number(_pick(form_data, "duration", "duration_minutes", default=None))
+    if estimated_minutes_number is None or estimated_minutes_number <= 0:
+        estimated_minutes = DEFAULT_DURATION_MINUTES
+        builder_assumptions.append({
+            "field": "所要時間",
+            "value": f"{DEFAULT_DURATION_MINUTES}分",
+            "reason": "入力に1セッションの所要時間が明記されていなかったため、標準的な値で仮置きした。実際の所要時間に合わせて修正してください。",
+        })
+    else:
+        estimated_minutes = int(round(estimated_minutes_number))
+
+    # 謝礼（1人あたり）が未入力/0 のとき、時給×所要時間から概算して提案する（謝礼ありとして扱えるようにする）
+    reward_amount_number = _to_number(reward_amount)
+    if reward_amount_number is None or reward_amount_number <= 0:
+        hourly_number = _to_number(hourly_rate)
+        if hourly_number and hourly_number > 0:
+            proposed_amount = int(round(hourly_number * estimated_minutes / 60))
+            if proposed_amount > 0:
+                reward_amount = proposed_amount
+                builder_assumptions.append({
+                    "field": "謝礼（1人あたり）",
+                    "value": f"{proposed_amount:,}円",
+                    "reason": f"時給{int(hourly_number):,}円×所要時間{estimated_minutes}分から概算した。最終額は謝金規程に合わせて確認してください。",
+                })
+
     reward_total_amount = _pick(form_data, "rewardTotalAmount", "app_config.rewardTotalAmount", default=None)
     if reward_total_amount in (None, ""):
         amount_number = _to_number(reward_amount)
@@ -313,6 +347,8 @@ def build_generation_context(
             "generated_at": datetime.now().isoformat(),
             "source_text": _pick(form_data, "research_plan", "researchPlan", "rawResearchInput", default=""),
             "followup_answers": _pick(form_data, "followupAnswers", "followup_answers", default={}),
+            # context構築時に提案補完した項目（所要時間・謝礼など）。LLM enricher が追記する。
+            "llm_assumptions": builder_assumptions,
             "preset_snapshot": {
                 "submission_preset_id": submission_preset_id or "",
                 "principal_investigator_preset_id": investigator_preset_id or "",
@@ -376,7 +412,7 @@ def build_generation_context(
             "unit": _pick(form_data, "rewardUnit", "app_config.rewardUnit", default="回"),
             "type": reward_type,
             "rationale": _pick(form_data, "rewardRationale", default=""),
-            "estimated_minutes": _pick(form_data, "duration", "duration_minutes", default=None),
+            "estimated_minutes": estimated_minutes,
             "estimated_participants": participant_count,
             "total_amount": reward_total_amount,
             "hourly_rate": hourly_rate,

@@ -23,6 +23,8 @@ logger = get_logger(__name__)
 TERMINOLOGY_RULE = (
     "用語の制約：研究に協力する人を指す場合は、必ず「研究対象者」または「参加者」と表記すること。"
     "それ以外の呼称（健康状態を含意する旧来の語や、実験の語を含む対象側の旧来の呼称など）は一切使用しないこと。"
+    "実験計画の用語も同様に、対象側の旧来語を含む計画名は使わず、"
+    "『参加者内計画（参加者内要因）』『参加者間計画（参加者間要因）』のように『参加者』を用いて表記すること。"
 )
 
 # アカデミックライティング基本ルール（実施計画書向け）
@@ -247,7 +249,8 @@ class LLMDocumentGenerator:
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
+        result = await self._call_llm(prompt)
+        return result if result.strip() else self._fallback_overview(context)
 
     async def _generate_experiment_objective(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
         """実験の目的 / アンケートの目的を生成（3-1）"""
@@ -297,7 +300,8 @@ class LLMDocumentGenerator:
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
+        result = await self._call_llm(prompt)
+        return result if result.strip() else self._fallback_experiment_objective(context)
 
     async def _generate_participants(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
         """実験参加者 / 研究対象者を生成（3-2）。同意書裏面相当の厚みを持たせる。"""
@@ -329,7 +333,8 @@ class LLMDocumentGenerator:
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
+        result = await self._call_llm(prompt)
+        return result if result.strip() else self._fallback_participants(context)
 
     async def _generate_reward(self, context: Dict[str, Any]) -> str:
         """謝金についてを生成"""
@@ -386,7 +391,8 @@ class LLMDocumentGenerator:
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
+        result = await self._call_llm(prompt)
+        return result if result.strip() else self._fallback_equipment(context)
 
     async def _generate_procedures(self, context: Dict[str, Any], is_questionnaire: bool = False) -> str:
         """実験手順（3-4）/ 実施内容（アンケートの場合 3-3）を生成"""
@@ -445,8 +451,9 @@ class LLMDocumentGenerator:
 
 見出しは含めず、本文のみを出力してください。
 """
-        return await self._call_llm(prompt)
-    
+        result = await self._call_llm(prompt)
+        return result if result.strip() else self._fallback_procedures(context)
+
     async def _generate_risks(self, context: Dict[str, Any]) -> str:
         """想定される負荷を生成"""
         risks = context.get('risks', [])
@@ -487,24 +494,126 @@ class LLMDocumentGenerator:
 """
         return await self._call_llm(prompt)
     
-    async def _call_llm(self, prompt: str) -> str:
-        """LLM呼び出し（共通処理）"""
-        try:
-            response = await self.llm.generate_content_async(
-                prompt=prompt,
-                system_instruction=(
-                    "あなたは日本の大学で研究倫理審査申請書を作成する経験豊富な研究者です。"
-                    "実施計画書は「これから行う」計画ではなく「決定済み」の内容を記述するものです。"
-                    "すべて断定形で書き、曖昧な表現は避けてください。"
-                    "専門用語は使用せず、一般の方にも分かりやすい日本語で記述してください。"
-                    "である調で統一してください。"
-                    + TERMINOLOGY_RULE
-                )
-            )
-            return self._post_process(response)
-        except Exception as e:
-            logger.error(f"LLM呼び出しエラー: {e}")
+    # ------------------------------------------------------------------
+    # 決定的フォールバック（LLMが空応答のとき、context から本文を組み立てて
+    # セクションを空欄にしない。中断せず必ずドラフトを出す方針に沿う）。
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _ordinal_jp(n: int) -> str:
+        kanji = "一二三四五六七八九十"
+        return kanji[n - 1] if 1 <= n <= len(kanji) else str(n)
+
+    def _fallback_overview(self, context: Dict[str, Any]) -> str:
+        purpose = self._as_sentence(context.get("brief_description", ""))
+        method = self._as_sentence(context.get("methodology", ""))
+        target_raw = str(context.get("target_participants", "")).strip().rstrip("。．.").strip()
+        parts = [p for p in (purpose, method) if p]
+        if target_raw:
+            parts.append(f"研究対象者は{target_raw}とする。")
+        return "".join(parts) or "本研究の概要は別紙のとおりである。"
+
+    @staticmethod
+    def _as_sentence(text: str) -> str:
+        """文字列を1文として整える（前後空白を除き、末尾に句点を付ける）。空なら空文字。"""
+        t = str(text).strip()
+        if not t:
             return ""
+        return t if t.endswith(("。", "．", ".")) else t + "。"
+
+    def _fallback_experiment_objective(self, context: Dict[str, Any]) -> str:
+        # 目的は purpose を優先（無ければ method）。全文を文中に埋め込まず独立した文として並べ、
+        # 「本実験は、本実験は…」のような主語重複や「…。を…」の句読点崩れを避ける。
+        purpose = self._as_sentence(context.get("brief_description", ""))
+        method = self._as_sentence(context.get("methodology", ""))
+        parts = []
+        if purpose:
+            parts.append(purpose)
+        elif method:
+            parts.append(method)
+        parts.append("本実験では、設定した条件間で参加者の反応や回答を比較し、研究目的に関わる指標を測定する。")
+        return "".join(parts)
+
+    def _fallback_participants(self, context: Dict[str, Any]) -> str:
+        target = self._as_sentence(context.get("target_participants", ""))
+        count = context.get("participant_count", "")
+        count_str = f"{count}名" if count not in (None, "", 0) else "所定の人数"
+        parts = []
+        if target:
+            parts.append(target)
+            parts.append(f"予定人数は{count_str}とする。")
+        else:
+            parts.append(f"実験参加者は本研究の参加条件を満たす成人とし、予定人数は{count_str}とする。")
+        parts.append("本研究の目的を達成するため、これらの参加者の反応や回答を分析する必要がある。")
+        parts.append(
+            "募集は学内掲示およびメール・SNS等による公募で行い、研究室内で募集する場合は、"
+            "参加・不参加が成績評価や指導上の関係に影響しないことを明示し、参加の自由意思を担保する。"
+        )
+        parts.append("謝金は大学の謝金規程に基づき支払う。")
+        parts.append("参加は自由意思によるものであり、参加しない場合や途中で取りやめた場合にも不利益は生じない。")
+        return "".join(parts)
+
+    def _fallback_equipment(self, context: Dict[str, Any]) -> str:
+        devices = [str(d).strip() for d in (context.get("devices") or []) if str(d).strip()]
+        method = self._as_sentence(context.get("methodology", ""))
+        if devices:
+            sentences = "".join(
+                f"第{self._ordinal_jp(i)}に、{device}を用いる。"
+                for i, device in enumerate(devices, 1)
+            )
+            lead = f"本実験で用いる装置は以下から構成される。{sentences}"
+        else:
+            lead = (
+                "本実験で用いる装置は以下から構成される。第一に、参加者が操作する個人用パソコン"
+                "（またはノートパソコン）である。第二に、音声を提示するためのヘッドホンまたは"
+                "イヤホンである。これらは一般的な機器であり、参加者に過度な負担を与えない。"
+            )
+        # タスクは method を独立した文として記述（文中に埋め込まない）
+        if method:
+            task = "実験タスクは次のとおりである。" + method
+        else:
+            task = "実験タスクとして、参加者は提示される刺激を視聴し、所定の課題に回答する。"
+        return lead + task
+
+    def _fallback_procedures(self, context: Dict[str, Any]) -> str:
+        duration = context.get("duration", 60) or 60
+        method = str(context.get("methodology", "")).strip()
+        return (
+            "本実験に関する説明を書面で行った上で、以下の手順で実施する。"
+            "第一に、研究の目的・内容・倫理的配慮について説明し、参加の任意性といつでも中断・撤回できる"
+            "ことを伝えた上で同意を取得する（約10分）。第二に、使用機器の準備と動作確認を行う（約5分）。"
+            f"第三に、{method or '設定した条件に基づく課題を提示し、参加者は提示内容に回答する'}"
+            "（中心となる実験試行）。各試行の合間には適宜休憩を挟み、参加者はいつでも中断できる。"
+            "第四に、終了処理として体調を確認し、データの保存と謝礼の案内を行う（約5分）。"
+            f"全体の所要時間は約{duration}分である。"
+        )
+
+    async def _call_llm(self, prompt: str) -> str:
+        """LLM呼び出し（共通処理）。
+
+        推論モデルが一過性に空本文を返すことがあるため、空のときは一度だけ再試行する。
+        最終的に空ならば空文字を返し、呼び出し側が決定的フォールバックで埋める。
+        """
+        system_instruction = (
+            "あなたは日本の大学で研究倫理審査申請書を作成する経験豊富な研究者です。"
+            "実施計画書は「これから行う」計画ではなく「決定済み」の内容を記述するものです。"
+            "すべて断定形で書き、曖昧な表現は避けてください。"
+            "専門用語は使用せず、一般の方にも分かりやすい日本語で記述してください。"
+            "である調で統一してください。"
+            + TERMINOLOGY_RULE
+        )
+        for attempt in range(2):
+            try:
+                response = await self.llm.generate_content_async(
+                    prompt=prompt,
+                    system_instruction=system_instruction,
+                )
+                processed = self._post_process(response)
+                if processed.strip():
+                    return processed
+                logger.warning(f"LLMが空応答を返しました（再試行 {attempt + 1}/2）")
+            except Exception as e:
+                logger.error(f"LLM呼び出しエラー（再試行 {attempt + 1}/2）: {e}")
+        return ""
     
     def _post_process(self, text: str) -> str:
         """AIライクな表現を除去する後処理"""

@@ -40,8 +40,20 @@ You MUST respond in valid JSON format only. Do not use markdown code blocks."""
             text = text[3:]
         if text.endswith("```"):
             text = text[:-3]
-        
-        return json.loads(text.strip())
+        text = text.strip()
+
+        # strict=False: LLM が文字列値の中に生の改行・タブ（制御文字）を出すことがあり、
+        # 既定の json.loads はこれを「Invalid control character」で拒否して解析全体が落ちる。
+        # 議論ログ→自動生成の経路を1回のJSON揺らぎで中断させないため、寛容に解析する。
+        try:
+            return json.loads(text, strict=False)
+        except json.JSONDecodeError:
+            # サルベージ: 前後に混入した非JSONテキストを除き、最初の { 〜 最後の } を再解析する。
+            start = text.find("{")
+            end = text.rfind("}")
+            if start != -1 and end != -1 and end > start:
+                return json.loads(text[start:end + 1], strict=False)
+            raise
 
 
 class OpenAIClient(LLMClient):
@@ -120,7 +132,9 @@ class OpenAIClient(LLMClient):
                     model=self.model_name,
                     messages=messages,
                 )
-                result = response.choices[0].message.content
+                # content が None で返ることがある（推論モデルが本文を出さない等）。
+                # その場合 len() で TypeError になり呼び出し側で「空セクション」になるのを防ぐ。
+                result = response.choices[0].message.content or ""
                 print(f"[OPENAI] Response received ({len(result)} chars)", flush=True)
                 return result
             except AuthenticationError as e:
@@ -147,7 +161,7 @@ class OpenAIClient(LLMClient):
                         model=self.model_name,
                         messages=messages,
                     )
-                    result = response.choices[0].message.content
+                    result = response.choices[0].message.content or ""
                     print(f"[OPENAI] Response received ({len(result)} chars)", flush=True)
                     return result
         except AuthenticationError as e:

@@ -313,6 +313,72 @@ export const reformatDocuments = async (
     };
 };
 
+// 対話的編集（崩れない設計）: 構造化データ(context)を編集→公式様式を再描画
+
+export interface EditableField {
+    key: string;
+    label: string;
+    type: 'text' | 'textarea' | 'number' | 'list';
+    group: string;
+    value: unknown;
+    text: string;
+}
+
+export interface EditableContext {
+    sessionId: string;
+    title: string;
+    fields: EditableField[];
+}
+
+interface EditableContextRaw {
+    session_id: string;
+    title: string;
+    fields: EditableField[];
+}
+
+export const getEditableContext = async (sessionId: string): Promise<EditableContext> => {
+    const response = await defaultClient.get<EditableContextRaw>(`/api/generate/context/${sessionId}`);
+    const d = response.data;
+    return { sessionId: d.session_id, title: d.title ?? '', fields: d.fields ?? [] };
+};
+
+export interface ApplyEditsResult {
+    sessionId: string;
+    status: string;
+    regenerated: string[];
+    errors: string[];
+    reviewNotes: Record<string, unknown>;
+    fields: EditableField[];
+}
+
+interface ApplyEditsResponseRaw {
+    session_id: string;
+    status: string;
+    regenerated: string[];
+    errors: string[];
+    review_notes: Record<string, unknown>;
+    fields: EditableField[];
+}
+
+export const applyEditableContext = async (
+    sessionId: string,
+    edits: Record<string, unknown>
+): Promise<ApplyEditsResult> => {
+    const response = await defaultClient.patch<ApplyEditsResponseRaw>(
+        `/api/generate/context/${sessionId}`,
+        { edits }
+    );
+    const d = response.data;
+    return {
+        sessionId: d.session_id,
+        status: d.status,
+        regenerated: d.regenerated ?? [],
+        errors: d.errors ?? [],
+        reviewNotes: d.review_notes ?? {},
+        fields: d.fields ?? [],
+    };
+};
+
 // レビューAPI
 
 export const requestReview = async (

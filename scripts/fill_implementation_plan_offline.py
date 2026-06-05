@@ -21,6 +21,7 @@ from app.services.llm_document_generator import (  # noqa: E402
     LLMDocumentGenerator,
     build_implementation_plan_outline,
 )
+from app.services.context_text_enricher import normalize_research_terminology  # noqa: E402
 
 
 def main() -> int:
@@ -69,6 +70,10 @@ def main() -> int:
         if not str(sections.get(key, "")).strip():
             sections[key] = fb(impl_context)
             filled.append(key)
+
+    # 既存本文の用語も統一（研究者→実験実施者、被験者→研究対象者 等）
+    for key in list(sections.keys()):
+        sections[key] = normalize_research_terminology(sections[key])
 
     outline = build_implementation_plan_outline(is_questionnaire=False)
     out = gen._build_implementation_plan_docx(

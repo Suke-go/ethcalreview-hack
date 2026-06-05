@@ -125,6 +125,28 @@ def test_recruitment_terminology_rule() -> None:
     _assert_terminology(rnotice.TERMINOLOGY_RULE, "recruitment TERMINOLOGY_RULE")
 
 
+def test_normalize_research_terminology_rules() -> None:
+    """用語の決定的正規化（被験者/健常者→研究対象者・参加者、研究者→実験実施者）。"""
+    from app.services.context_text_enricher import normalize_research_terminology as norm
+
+    assert norm("研究者は参加者に説明する。") == "実験実施者は参加者に説明する。"
+    assert norm("被験者内計画で研究者が測定する。") == "参加者内計画で実験実施者が測定する。"
+    assert norm("健常者を対象とする。") == "研究対象者を対象とする。"
+    # 別概念・役職は保護される
+    assert norm("共同研究者と連携する。") == "共同研究者と連携する。"
+    assert norm("研究責任者は善甫である。") == "研究責任者は善甫である。"
+    assert norm("研究対象者を募集する。") == "研究対象者を募集する。"
+    assert norm("研究担当者へ申し出る。") == "研究担当者へ申し出る。"
+
+
+def test_post_process_normalizes_researcher_term() -> None:
+    """LLM生成物の後処理でも「研究者」が「実験実施者」に統一されること。"""
+    gen = LLMDocumentGenerator(EmptyLLMClient(), lab_defaults={})
+    out = gen._post_process("研究者は参加者へ説明する。")
+    assert "研究者" not in out
+    assert "実験実施者は参加者へ説明する。" in out
+
+
 def test_explanation_contact_uses_principal_investigator() -> None:
     """参加者説明書の問い合わせ先が form_data の principalInvestigator から埋まること。
 

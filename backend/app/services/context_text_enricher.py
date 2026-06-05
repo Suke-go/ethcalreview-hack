@@ -60,12 +60,23 @@ _TERMINOLOGY_REPLACEMENTS: list[tuple[str, str]] = [
 
 
 def normalize_research_terminology(text: Any) -> Any:
-    """文字列中の禁止用語（被験者・健常者）を許容語に置換する。文字列以外はそのまま返す。"""
+    """文字列中の用語を統一する（被験者・健常者→研究対象者／参加者、研究者→実験実施者）。
+
+    文字列以外はそのまま返す。「共同研究者」は別概念なので保護する（→実験実施者にしない）。
+    「研究責任者」「研究対象者」「研究担当者」は部分一致しないためそのまま残る。
+    """
     if not isinstance(text, str) or not text:
         return text
     for forbidden, allowed in _TERMINOLOGY_REPLACEMENTS:
         if forbidden in text:
             text = text.replace(forbidden, allowed)
+    # 実験を実施する担当者の呼称は「実験実施者」に統一する。
+    # 「共同研究者」は研究組織上の別概念なので、いったん退避してから置換し復元する。
+    if "研究者" in text:
+        sentinel = "@@KYODO@@"
+        text = text.replace("共同研究者", sentinel)
+        text = text.replace("研究者", "実験実施者")
+        text = text.replace(sentinel, "共同研究者")
     return text
 
 

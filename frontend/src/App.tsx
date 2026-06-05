@@ -20,6 +20,7 @@ import { useOnboarding } from './hooks/useOnboarding';
 import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
 import { setApiKey, getSession, downloadDocumentsZip, reformatDocuments, getPresets, API_BASE_URL } from './api/client';
+import { DocumentEditor } from './components/DocumentEditor';
 import type { AnalysisResult, FormData, SessionDetail, PresetBundle, ValidationIssue } from './types';
 
 
@@ -137,6 +138,7 @@ function App() {
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [generatedSessionId, setGeneratedSessionId] = useState<string | null>(null);
   const [reformatting, setReformatting] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [presets, setPresets] = useState<PresetBundle | null>(null);
   const [generationIssues, setGenerationIssues] = useState<ValidationIssue[]>([]);
   const [rawResearchInput, setRawResearchInput] = useState('');
@@ -1233,6 +1235,12 @@ function App() {
                             >
                               🔄 再度フォーマットに当てはめる
                             </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => setEditingSessionId(generatedSessionId)}
+                            >
+                              ✏️ 内容を編集
+                            </Button>
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
                               <Button
                                 variant="secondary"
@@ -1282,6 +1290,16 @@ function App() {
             />
           </div>
         </div>
+      )}
+
+      {editingSessionId && (
+        <DocumentEditor
+          sessionId={editingSessionId}
+          onClose={() => setEditingSessionId(null)}
+          onApplied={() => {
+            // 反映後はダウンロード対象が更新されている（崩れない再描画）
+          }}
+        />
       )}
 
       <ToastContainer

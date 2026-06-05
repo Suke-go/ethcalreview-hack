@@ -22,6 +22,7 @@ from app.services.context_text_enricher import enrich_generation_context_with_ll
 from app.services.generation_validator import error_issues, issue_payload, validate_generation_context
 from app.services.official_document_service import default_official_document_types, render_official_document
 from app.services.review_summary import build_review_notes, write_review_notes_file
+from app.services.editable_context import apply_editable_fields, extract_editable_fields
 from app.models.session import Session, SessionStatus, StepStatus
 from app.config import app_config, load_user_settings
 from app.logger import get_logger
@@ -306,6 +307,114 @@ async def reformat_official_documents(session_id: str):
         errors=errors,
         issues=issues,
         assumptions=assumptions,
+        download_url=f"/api/generate/download/{session_id}",
+    )
+
+
+class EditableFieldsResponse(BaseModel):
+    """編集可能フィールドの取得レスポンス"""
+    session_id: str
+    title: str = ""
+    fields: List[Dict[str, Any]] = []
+
+
+class ApplyEditsRequest(BaseModel):
+    """編集適用リクエスト（key→値）"""
+    edits: Dict[str, Any]
+
+
+class ApplyEditsResponse(BaseModel):
+    """編集適用レスポンス"""
+    session_id: str
+    status: str
+    regenerated: List[str]
+    errors: List[str] = []
+    review_notes: Dict[str, Any] = {}
+    fields: List[Dict[str, Any]] = []
+    download_url: str = ""
+
+
+@router.get("/context/{session_id}", response_model=EditableFieldsResponse)
+async def get_editable_context(session_id: str):
+    """対話的編集のための「編集可能フィールド」を取得する。
+
+    docx ではなく構造化データ（context_snapshot）を編集対象とする。値は型付き
+    （text/textarea/number/list）で返し、フロントはこれをフォーム表示する。
+    """
+    try:
+        session = Session.load(SESSIONS_DIR, session_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    context = session.steps.generate.context_snapshot
+    if not context:
+        raise HTTPException(status_code=400, detail="このセッションには編集可能な生成コンテキストがありません。")
+    research = context.get("research", {}) if isinstance(context, dict) else {}
+    return EditableFieldsResponse(
+        session_id=session_id,
+        title=str(research.get("title", "") or ""),
+        fields=extract_editable_fields(context),
+    )
+
+
+@router.patch("/context/{session_id}", response_model=ApplyEditsResponse)
+async def apply_editable_context(session_id: str, request: ApplyEditsRequest):
+    """編集値を context_snapshot に反映し、公式様式を再レンダリングする（崩れない編集）。
+
+    編集はアンカーベースの決定的レンダラで反映されるため、テンプレートの段組み・
+    チェック欄・項番は崩れない。LLM 生成物（実施計画書・説明書・アンケート）は
+    既存ファイルを保持する（再生成しない）。
+    """
+    try:
+        session = Session.load(SESSIONS_DIR, session_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    context = session.steps.generate.context_snapshot
+    if not context:
+        raise HTTPException(status_code=400, detail="このセッションには編集可能な生成コンテキストがありません。")
+
+    # 1) 編集を context に反映（整合性も再計算）
+    updated_context = apply_editable_fields(context, request.edits)
+    session.steps.generate.context_snapshot = updated_context
+    session.save(SESSIONS_DIR)
+
+    # 2) 公式様式を再レンダリング（決定的・LLM不要）
+    output_dir = app_config.output_dir / session_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    regenerated: List[str] = []
+    errors: List[str] = []
+    for doc_type in default_official_document_types(updated_context):
+        try:
+            render_official_document(doc_type, updated_context, output_dir)
+            regenerated.append(doc_type)
+        except PermissionError:
+            # 対象 docx を Word 等で開いていると書き込めない。原因が分かるメッセージにする。
+            errors.append(f"{doc_type}: ファイルが開かれているため更新できませんでした（Word等で開いている場合は閉じてください）")
+            logger.warning(f"apply-edits {doc_type}: PermissionError (file likely open)")
+        except Exception as e:  # 1書類の失敗で全体を止めない
+            errors.append(f"{doc_type}: {e}")
+            logger.error(f"apply-edits {doc_type} failed: {type(e).__name__}: {e}")
+
+    # 3) レビュー指摘リストを最新化
+    review_notes = build_review_notes(updated_context)
+    try:
+        write_review_notes_file(updated_context, output_dir)
+    except Exception as review_exc:
+        logger.warning(f"レビュー指摘の出力に失敗: {type(review_exc).__name__}: {review_exc}")
+
+    existing = session.steps.generate.generated_documents or []
+    session.steps.generate.generated_documents = list(dict.fromkeys([*existing, *regenerated]))
+    session.steps.generate.output_dir = str(output_dir)
+    session.save(SESSIONS_DIR)
+
+    logger.info(f"apply-edits session {session_id[:8]}: edited={list(request.edits.keys())} errors={len(errors)}")
+
+    return ApplyEditsResponse(
+        session_id=session_id,
+        status="completed" if not errors else "partial",
+        regenerated=regenerated,
+        errors=errors,
+        review_notes=review_notes,
+        fields=extract_editable_fields(updated_context),
         download_url=f"/api/generate/download/{session_id}",
     )
 

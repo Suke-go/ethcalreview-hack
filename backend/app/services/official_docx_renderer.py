@@ -431,10 +431,26 @@ def render_application_form(document: DocumentType, context: dict[str, Any]) -> 
         f"1.10 参照するべき倫理指針・研究の区分　{first_nonempty(get_path(context, 'ethics.guideline'))}",
     )
 
-    # ---- 1.12 健康被害の補償（既定：国大協保険あり） ----
-    set_relative_to_anchor(paragraphs, "研究対象者への健康被害の補償", 1, f"　 {cb(True)}有")
-    update_first_contains(paragraphs, "国立大学法人総合損害保険", f"　　　{cb(True)}国立大学法人総合損害保険（国大協保険）")
-    update_first_contains(paragraphs, "□無 (理由：", f"　 {cb(False)}無 (理由：　　　　　　　　　　　　　　　　　　　　　　　　　　　　)")
+    # ---- 1.12 健康被害の補償（同意書等と同じ context 設定を使用） ----
+    safety = get_path(context, "safety", {})
+    has_compensation = to_bool(safety.get("has_compensation"), True)
+    no_compensation_reason = first_nonempty(safety.get("no_compensation_reason"))
+    set_relative_to_anchor(
+        paragraphs,
+        "研究対象者への健康被害の補償",
+        1,
+        f"　 {cb(has_compensation)}有 {cb(not has_compensation)}無",
+    )
+    update_first_contains(
+        paragraphs,
+        "国立大学法人総合損害保険",
+        f"　　　{cb(has_compensation)}国立大学法人総合損害保険（国大協保険）",
+    )
+    update_first_contains(
+        paragraphs,
+        "□無 (理由：",
+        f"　 {cb(not has_compensation)}無 (理由：{no_compensation_reason or '　　　　　　　　　　　　　　　　　　　　'})",
+    )
 
     # ---- 2 取得データに関する情報 ----
     update_first_contains(paragraphs, "データの種類（記入）", f"データの種類：{join_text(data.get('types'))}")
@@ -801,11 +817,12 @@ def build_consent_overview_sections(context: dict[str, Any]) -> list[dict[str, A
     management_text = "".join(management_sentences)
 
     # ③(3) 研究参加の任意性（固定文 + 撤回期限）
-    withdrawal = first_nonempty(get_path(context, "consent.withdrawal_deadline_text"), "同意書署名の日から90日後")
-    voluntariness_text = (
-        "研究への参加は任意であり、参加しないことで不利益が生じることはありません。"
-        f"{withdrawal}までであればデータ提供の同意を撤回でき、破棄の申し出があった場合は直ちに破棄します。"
-        "実験の途中であっても不利益なく参加を取りやめることができます。"
+    voluntariness_text = first_nonempty(
+        get_path(context, "consent.withdrawal_notice"),
+        "研究への参加は任意です。実験への参加はいつでも中止でき、中止しても不利益はありません。"
+        "データ提供の同意は同意書署名日から90日以内であれば撤回できます。撤回の申し出があった場合、"
+        "削除可能な当該研究データを削除します。ただし、既に仮名加工したうえで集計・公表したデータは、"
+        "個別に特定して削除できません。",
     )
 
     return [
@@ -887,7 +904,7 @@ def render_consent_form(document: DocumentType, context: dict[str, Any]) -> None
     require_first_contains(
         paragraphs,
         "データ提供の同意撤回の期限",
-        f"データ提供の同意撤回の期限は{withdrawal_deadline}までとさせて頂きます。",
+        f"データ提供の同意を撤回できる期限は{withdrawal_deadline}です。",
     )
     require_first_contains(
         paragraphs,
@@ -922,8 +939,12 @@ def render_consent_withdrawal(document: DocumentType, context: dict[str, Any]) -
     require_any_contains(
         paragraphs,
         ["私は、", "私は，"],
-        f"私は、「課題名：{title}」について、研究対象者になることへの同意を撤回いたします。",
+        f"私は、「課題名：{title}」について、研究データ提供への同意を撤回いたします。",
     )
+    withdrawal_notice = first_nonempty(get_path(context, "consent.withdrawal_notice"))
+    if withdrawal_notice:
+        request_index = find_paragraph_index(paragraphs, "研究データ提供への同意を撤回")
+        insert_paragraphs_after(paragraphs[request_index], [withdrawal_notice])
     require_first_contains(
         paragraphs,
         "上記のとおり同意撤回の申し出を受けました",
@@ -932,10 +953,10 @@ def render_consent_withdrawal(document: DocumentType, context: dict[str, Any]) -
     require_first_contains(
         paragraphs,
         "実験責任者　所　属",
-        f"実験責任者　所　属   {first_nonempty(pi.get('affiliation'))}",
+        f"実施責任者　所　属   {first_nonempty(pi.get('affiliation'))}",
     )
-    # 氏名欄は2つある（1つ目＝研究対象者の署名欄／2つ目＝実験責任者欄）。
-    # 実験責任者欄（2番目）だけを更新し、研究対象者の署名欄は空欄のまま残す。
+    # 氏名欄は2つある（1つ目＝研究対象者の署名欄／2つ目＝実施責任者欄）。
+    # 実施責任者欄（2番目）だけを更新し、研究対象者の署名欄は空欄のまま残す。
     responsible_name_text = f"氏　名     {first_nonempty(pi.get('name'))}　　   （署名）"
     try:
         responsible_name_index = find_paragraph_index(paragraphs, "氏　名", occurrence=2)

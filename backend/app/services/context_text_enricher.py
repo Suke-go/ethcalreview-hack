@@ -296,4 +296,7 @@ def flatten_context_for_llm_form_data(form_data: dict[str, Any], context: dict[s
     }
     flattened["ethicsCommittee"] = submission.get("committee_name", "")
     flattened["ethicsCommitteePhone"] = submission.get("office_tel", "")
+    flattened["withdrawalNotice"] = context.get("consent", {}).get("withdrawal_notice", "")
+    flattened["withdrawalDeadlineText"] = context.get("consent", {}).get("withdrawal_deadline_text", "")
+    flattened["compensationText"] = context.get("safety", {}).get("compensation_text", "")
     return flattened

@@ -45,18 +45,15 @@ def unify_terminology(text: str) -> str:
     """
     用語を統一
     
-    実験実施者 / 研究者 → 実施分担者
+    参加者と書類上の担当者の役割を混同しない。
     """
-    replacements = {
-        '実験実施者': '実施分担者',
-        '研究者が': '実施分担者が',
-        '研究者は': '実施分担者は',
-        '研究者': '実施分担者',  # 最後に適用
-    }
-    
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-    
+    # 「実験実施者」「実施責任者」「実施分担者」は異なる役割名として保持する。
+    # 一般名詞の「研究者」だけを実験実施者に整える（共同研究者は保護）。
+    if "研究者" in text:
+        sentinel = "@@CO_RESEARCHER@@"
+        text = text.replace("共同研究者", sentinel)
+        text = text.replace("研究者", "実験実施者")
+        text = text.replace(sentinel, "共同研究者")
     return text
 
 

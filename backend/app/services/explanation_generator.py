@@ -9,9 +9,11 @@ from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from pathlib import Path
 from typing import Dict, Any, List
+import re
 
 from app.services.llm_client import LLMClient
 from app.logger import get_logger
+from app.services.ethics_policy import compensation_policy, withdrawal_policy
 
 logger = get_logger(__name__)
 
@@ -40,6 +42,7 @@ EXPLANATION_PROMPT = """
 4. 難しい漢字やカタカナ語は避け、やさしい表現に置き換える
 5. 1文は短く、読みやすくする
 6. ★用語の制約：研究に協力する方を指す場合は必ず「研究対象者」または「参加者」と表記する。それ以外の旧来の呼称（健康状態を含意する語や、実験の語を含む対象側の旧来の呼称など）は絶対に使用しない。
+   - 「実験実施者」「実施責任者」「実施分担者」は別の役割として扱い、相互に置き換えないこと
 
 【記述すべきセクション（この順序で）】
 1. 【研究の目的】 - なぜこの研究をするのか
@@ -57,7 +60,11 @@ EXPLANATION_PROMPT = """
    - データを匿名化し、氏名等の個人情報と研究データを分けて管理すること
    - 取得したデータを何の目的（研究の分析）にのみ使用するか（利用目的）
    - 論文・学会発表・報告書等で公表する際に、個人が特定される形では公表しないこと（公表方針）
-7. 【参加の任意性】 - いつでもやめられること、途中で辞退しても不利益がないこと
+7. 【参加の任意性】 - 実験参加の中止とデータ提供同意の撤回を分けて説明すること
+   - 参加の中止はいつでも可能であること、データ提供同意の撤回条件は以下の共通文を使うこと
+   - {withdrawal_notice}
+8. 【健康被害に対する補償】 - 以下の共通文をそのまま使うこと
+   - {compensation_text}
 
 ※【問い合わせ先】は含めないでください（システムで自動追加します）
 
@@ -88,6 +95,7 @@ class ExplanationGenerator:
         
         # LLMで説明文を生成
         explanation_text = await self._generate_explanation(context)
+        explanation_text = self._enforce_shared_ethics_policy(explanation_text, context)
         
         # DOCXファイル生成
         output_path = self._generate_docx(explanation_text, context, output_dir)
@@ -100,7 +108,7 @@ class ExplanationGenerator:
     def _build_context(self, form_data: Dict[str, Any]) -> Dict[str, Any]:
         """フォームデータからコンテキストを構築"""
         lab_info = self.defaults.get("lab_info", {})
-        # 問い合わせ先（研究責任者）は設定/プリセット由来で context に解決済み。
+        # 問い合わせ先（実施責任者）は設定/プリセット由来で context に解決済み。
         # flatten 経由で渡される principalInvestigator を最優先し、無ければ lab_defaults を使う。
         pi = form_data.get("principalInvestigator") or form_data.get("principal_investigator") or {}
         if not isinstance(pi, dict):
@@ -123,7 +131,9 @@ class ExplanationGenerator:
             "risk_countermeasures": risk_countermeasures,
             "risks_with_countermeasures": risks_with_countermeasures,
             "reward": form_data.get("rewardAmount", form_data.get("reward_amount", 0)),
-            # 問い合わせ先（研究責任者）: context 解決済みの principalInvestigator を最優先、lab_defaults はフォールバック
+            "withdrawal_notice": form_data.get("withdrawalNotice") or withdrawal_policy(90)[1],
+            "compensation_text": form_data.get("compensationText") or compensation_policy(True),
+            # 問い合わせ先（実施責任者）: context 解決済みの principalInvestigator を最優先、lab_defaults はフォールバック
             "pi_name": pi.get("name") or lab_info.get("pi_name", ""),
             "pi_affiliation": pi.get("affiliation") or lab_info.get("pi_affiliation", ""),
             "pi_position": pi.get("position") or lab_info.get("pi_position", ""),
@@ -132,6 +142,31 @@ class ExplanationGenerator:
             "ethics_committee": form_data.get("ethicsCommittee") or self.defaults.get("ethics_committee", {}).get("name", ""),
             "ethics_phone": form_data.get("ethicsCommitteePhone") or self.defaults.get("ethics_committee", {}).get("phone", ""),
         }
+
+    def _enforce_shared_ethics_policy(self, text: str, context: Dict[str, Any]) -> str:
+        """LLMの表現揺れを避けるため、任意性・補償の節を共通文で確定する。"""
+        lines = text.splitlines()
+        removable = {"【参加の任意性】", "【健康被害に対する補償】"}
+        kept: list[str] = []
+        skipping = False
+        insert_at = len(lines)
+        for line in lines:
+            stripped = line.strip()
+            is_heading = bool(re.match(r"^(?:\d+[.．、]\s*)?【[^】]+】", stripped))
+            if is_heading:
+                skipping = next((heading for heading in removable if heading in stripped), None) is not None
+                if skipping and insert_at == len(lines):
+                    insert_at = len(kept)
+            if not skipping:
+                kept.append(line)
+        replacement = [
+            "【参加の任意性】",
+            context["withdrawal_notice"],
+            "【健康被害に対する補償】",
+            context["compensation_text"],
+        ]
+        insert_at = min(insert_at, len(kept))
+        return "\n".join(kept[:insert_at] + replacement + kept[insert_at:]).strip()
     
     def _format_risks_with_countermeasures(self, risks: List[str], countermeasures: List[str]) -> str:
         """リスクと対策をフォーマット"""
@@ -253,8 +288,8 @@ class ExplanationGenerator:
         doc.add_paragraph(f"本研究に関するご質問やご相談は、以下までお問い合わせください。")
         doc.add_paragraph()
         
-        # 研究責任者
-        doc.add_paragraph("■ 研究責任者")
+        # 実施責任者
+        doc.add_paragraph("■ 実施責任者")
         pi_info = []
         if context['pi_affiliation']:
             pi_info.append(context['pi_affiliation'])
@@ -295,4 +330,3 @@ async def generate_explanation_document(
     """
     generator = ExplanationGenerator(llm_client, lab_defaults)
     return await generator.generate(form_data, output_dir)
-

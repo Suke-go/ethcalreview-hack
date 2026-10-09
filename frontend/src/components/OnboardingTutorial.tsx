@@ -24,7 +24,7 @@ const steps = [
     {
         icon: '🏢',
         title: 'Step 2: 研究室情報の設定',
-        description: '設定画面の「研究室情報」タブで、\n研究責任者の氏名・所属・連絡先を設定してください。',
+        description: '設定画面の「研究室情報」タブで、\n実施責任者の氏名・所属・連絡先を設定してください。',
         action: 'openSettings',
         actionLabel: '設定を開く',
     },

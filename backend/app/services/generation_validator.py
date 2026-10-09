@@ -273,6 +273,16 @@ def validate_generation_context(context: dict[str, Any]) -> list[ValidationIssue
         if issue:
             issues.append(issue)
 
+    safety = context.get("safety", {}) or {}
+    if not bool(safety.get("has_compensation", True)) and is_blank(safety.get("no_compensation_reason")):
+        issues.append(
+            ValidationIssue(
+                field="ethics.no_compensation_reason",
+                message="補償を行わない理由を入力してください。",
+                severity="warning",
+            )
+        )
+
     reward_enabled = bool(get_path(context, "reward.enabled", False))
     if reward_enabled:
         for path, label in [

@@ -47,7 +47,7 @@ FIELD_DEFS: list[dict[str, str]] = [
     {"key": "data_types", "path": "data.types", "label": "取得データ種別（改行区切り）", "type": "list", "group": "データ管理"},
     {"key": "storage_location", "path": "data.storage_location", "label": "保管場所", "type": "text", "group": "データ管理"},
     {"key": "data_manager", "path": "data.manager", "label": "管理責任者", "type": "text", "group": "データ管理"},
-    {"key": "withdrawal_deadline_text", "path": "consent.withdrawal_deadline_text", "label": "撤回期限", "type": "text", "group": "データ管理"},
+    {"key": "withdrawal_period_days", "path": "consent.withdrawal_period_days", "label": "データ提供同意の撤回期限（日数。空欄は公表前まで）", "type": "number", "group": "データ管理"},
 ]
 
 _FIELD_BY_KEY = {f["key"]: f for f in FIELD_DEFS}
@@ -137,6 +137,15 @@ def apply_editable_fields(context: dict[str, Any], edits: dict[str, Any]) -> dic
         if not field:
             continue
         _set_path(updated, field["path"], _coerce(field, value))
+
+    if "withdrawal_period_days" in (edits or {}):
+        from app.services.ethics_policy import withdrawal_policy
+
+        consent = updated.setdefault("consent", {})
+        days = consent.get("withdrawal_period_days")
+        deadline, notice = withdrawal_policy(days)
+        consent["withdrawal_deadline_text"] = deadline
+        consent["withdrawal_notice"] = notice
 
     # --- 整合性の再計算 ---
     reward = updated.setdefault("reward", {})

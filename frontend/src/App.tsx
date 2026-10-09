@@ -227,7 +227,8 @@ function App() {
       fundingSource: budgetPreset?.source || prev.fundingSource,
       fundingPI: preset.name || prev.fundingPI,
       fundingProjectName: budgetPreset?.project_name || prev.fundingProjectName,
-      storageLocation: rooms[0] ? `研究室(${rooms[0]})` : prev.storageLocation,
+      storageLocation: preset.default_storage_location || prev.storageLocation,
+      managementMethod: preset.default_management_method || prev.managementMethod,
       dataManager: preset.name || prev.dataManager,
       domainName: submissionPreset?.label || prev.domainName,
       domainHeadName: domainHead || prev.domainHeadName,
@@ -301,7 +302,7 @@ function App() {
     if (!analysisResult) return;
 
     // 謝礼計算: 設定の単価 × 所要時間 (budget.hourly_rate または reward.baseAmountPer60Min)
-    const hourlyRate = settings.budget?.hourly_rate ?? settings.reward?.baseAmountPer60Min ?? 1000;
+    const hourlyRate = settings.budget?.hourly_rate ?? settings.reward?.baseAmountPer60Min ?? 1230;
     const rewardAmount = Math.round(hourlyRate * (analysisResult.duration_minutes / 60));
 
     const formData: FormData = {

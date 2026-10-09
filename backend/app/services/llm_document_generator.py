@@ -162,7 +162,7 @@ class LLMDocumentGenerator:
             "devices": form_data.get("devices", []),
             "risks": form_data.get("risks", []),
             "risk_countermeasures": form_data.get("riskCountermeasures", []),
-            "reward_amount": form_data.get("rewardAmount", form_data.get("reward_amount", 800)),
+            "reward_amount": form_data.get("rewardAmount", form_data.get("reward_amount", 1230)),
             "withdrawal_notice": form_data.get("withdrawalNotice", ""),
             "compensation_text": form_data.get("compensationText", ""),
         }
@@ -356,7 +356,7 @@ class LLMDocumentGenerator:
     async def _generate_reward(self, context: Dict[str, Any]) -> str:
         """謝金についてを生成"""
         duration = context.get('duration', 60)
-        reward = context.get('reward_amount', 800)
+        reward = context.get('reward_amount', 1230)
         
         prompt = f"""
 {IMPLEMENTATION_PLAN_RULES}

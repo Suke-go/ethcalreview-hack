@@ -23,9 +23,9 @@
   "budget": {
     "source": "運営費交付金",
     "project_name": "",
-    "reward_per_person": 800,
+    "reward_per_person": 1230,
     "reward_type": "Amazonギフトカード（Eメールタイプ）",
-    "hourly_rate": 1000
+    "hourly_rate": 1230
   },
   "insurance": {
     "type": "傷害保険",

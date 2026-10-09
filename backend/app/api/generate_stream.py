@@ -274,43 +274,6 @@ async def generate_documents_stream(
                         action="error"
                     )
             
-            # Step 4: エージェントB開始（倫理審査シミュレート）
-            yield _sse_agent(
-                agent="B",
-                role="倫理審査シミュレートエージェント",
-                message="生成された書類を確認します。",
-                action="start"
-            )
-            
-            # レビュー進捗（簡易版）
-            yield _sse_agent(
-                agent="B",
-                role="倫理審査シミュレートエージェント",
-                message="申請書の形式を確認しています...",
-                action="reviewing"
-            )
-            
-            yield _sse_agent(
-                agent="B",
-                role="倫理審査シミュレートエージェント",
-                message="リスク記載を確認しています...",
-                action="reviewing"
-            )
-            
-            yield _sse_agent(
-                agent="B",
-                role="倫理審査シミュレートエージェント",
-                message="同意書との整合性を確認しています...",
-                action="reviewing"
-            )
-            
-            yield _sse_agent(
-                agent="B",
-                role="倫理審査シミュレートエージェント",
-                message="✓ レビュー完了。問題ありませんでした。",
-                action="completed"
-            )
-            
             # レビュー指摘リストを出力一式に同梱（人間が確認・修正するための一覧）
             try:
                 write_review_notes_file(generation_context, output_dir)

@@ -21,6 +21,8 @@ import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
 import { setApiKey, getSession, downloadDocumentsZip, reformatDocuments, getPresets, API_BASE_URL } from './api/client';
 import { DocumentEditor } from './components/DocumentEditor';
+import { SubscriptionReviewPrompt } from './components/SubscriptionReviewPrompt';
+import { buildSubscriptionReviewPrompt } from './utils/subscriptionReviewPrompt';
 import type { AnalysisResult, FormData, SessionDetail, PresetBundle, ValidationIssue } from './types';
 
 
@@ -64,6 +66,9 @@ interface ApplicationFormConfig {
   recordingPublicRelease: boolean;
   invasiveness: boolean;
   invasivenessDetails?: string;
+  withdrawalPeriodDays: number | null;
+  hasCompensation: boolean;
+  noCompensationReason?: string;
   // 10. データ保存
   dataTypes?: string;  // AI推察
   retentionPeriod: '10years' | 'less';
@@ -95,6 +100,9 @@ const defaultAppConfig: ApplicationFormConfig = {
   videoRecording: false,
   recordingPublicRelease: false,
   invasiveness: false,
+  withdrawalPeriodDays: 90,
+  hasCompensation: true,
+  noCompensationReason: '',
   dataTypes: '',
   retentionPeriod: '10years',
   hasAnonymization: true,
@@ -102,7 +110,7 @@ const defaultAppConfig: ApplicationFormConfig = {
   storageLocation: '研究室(3M211)にて管理されたノートパソコン',  // lab_defaults.json から
   dataManager: '善甫 啓一',  // lab_defaults.json から
   managementMethod: 'ノートパソコンの使用を関係者のみとし、結果の解析はネットに接続されない状態で行う。また、暗号化およびパスワード保護を用いることによりデータを保護する。同意書等の紙媒体については研究室(3M211)の鍵付き棚に保管し、鍵は管理責任者が管理する。',
-  disposalMethod: '研究対象者からの実験に関するデータの破棄が申請された場合は直ちに研究対象者のデータを破棄する。また、研究成果発表から10年が経過した場合、データの保存しているSSDを初期化し、データの復元をできないようにして処分する。同意書等の紙媒体についてはシュレッダーにかけた上で破棄し、復元できないように処分する',
+  disposalMethod: 'データ提供の同意が撤回された場合は、削除可能な当該研究データを削除する。ただし、既に仮名加工されたうえで集計・公表されたデータは、個別に特定して削除できない。研究成果発表から10年が経過した後は、保存媒体を初期化した後、データを復元できないよう媒体を物理的に破壊して処分する。同意書等の紙媒体はシュレッダーで裁断して処分する。',
 };
 
 const DEFAULT_ZEMPO_LAB_CONDUCTOR_TEL = '029-853-6185';
@@ -251,7 +259,6 @@ function App() {
       ...prev,
       roomPresetId: preset.id,
       facilityName: preset.rooms.join(', '),
-      storageLocation: preset.rooms[0] ? `研究室(${preset.rooms[0]})` : prev.storageLocation,
     }));
   }, [presets]);
 
@@ -421,6 +428,25 @@ function App() {
     setSelectedSession(null);
   }, []);
 
+  const subscriptionReviewPrompt = analysisResult
+    ? buildSubscriptionReviewPrompt({
+      researchPlan: rawResearchInput,
+      analysis: analysisResult,
+      investigator: settings.principal_investigator ?? settings.principalInvestigator!,
+      presets,
+      investigatorPresetId: appConfig.principalInvestigatorPresetId,
+      facilityName: appConfig.facilityName,
+      subInvestigators: appConfig.subInvestigators,
+      withdrawalPeriodDays: appConfig.withdrawalPeriodDays,
+      hasCompensation: appConfig.hasCompensation,
+      noCompensationReason: appConfig.noCompensationReason,
+      storageLocation: appConfig.storageLocation,
+      dataManager: appConfig.dataManager,
+      managementMethod: appConfig.managementMethod,
+      disposalMethod: appConfig.disposalMethod,
+    })
+    : '';
+
   return (
     <div className="app">
       <Header
@@ -508,7 +534,7 @@ function App() {
                 <div className="review-section">
                   <div className="review-header">
                     <h2>🔍 AI解析結果の確認</h2>
-                    <p>以下の内容を確認・編集してください。「書類生成」をクリックすると、マルチエージェントによるレビューと書類生成が開始されます。</p>
+                    <p>以下の内容を確認・編集してください。書類生成後、ChatGPTサブスクで手動レビューするためのプロンプトを表示します。書類生成自体には設定したLLM APIを使用します。</p>
                   </div>
 
                   {generationIssues.length > 0 && (
@@ -550,7 +576,7 @@ function App() {
                       <div className="review-card preset-card">
                         <h3>プリセット</h3>
                         <div className="review-field">
-                          <label>研究責任者</label>
+                          <label>実施責任者</label>
                           <select
                             className="input"
                             value={appConfig.principalInvestigatorPresetId || ''}
@@ -951,6 +977,43 @@ function App() {
                     <div className="review-card">
                       <h3>倫理的配慮（申請書 9項）</h3>
                       <div className="review-field">
+                        <label>データ提供の同意を撤回できる期限</label>
+                        <select
+                          className="input"
+                          value={appConfig.withdrawalPeriodDays === null ? 'unlimited' : String(appConfig.withdrawalPeriodDays)}
+                          onChange={(e) => setAppConfig(prev => ({
+                            ...prev,
+                            withdrawalPeriodDays: e.target.value === 'unlimited' ? null : Number(e.target.value),
+                          }))}
+                        >
+                          <option value="90">同意書署名日から90日以内</option>
+                          <option value="unlimited">研究成果の公表前まで（固定日数なし）</option>
+                        </select>
+                        <small>実験への参加中止はいつでも可能です。データ提供の同意撤回期限とは分けて各書類に記載します。</small>
+                      </div>
+                      <div className="review-field">
+                        <label>健康被害に対する補償</label>
+                        <select
+                          className="input"
+                          value={appConfig.hasCompensation ? 'yes' : 'no'}
+                          onChange={(e) => setAppConfig(prev => ({ ...prev, hasCompensation: e.target.value === 'yes' }))}
+                        >
+                          <option value="yes">有（国立大学法人総合損害保険・国大協保険）</option>
+                          <option value="no">無</option>
+                        </select>
+                      </div>
+                      {!appConfig.hasCompensation && (
+                        <div className="review-field">
+                          <label>補償を行わない理由</label>
+                          <Textarea
+                            value={appConfig.noCompensationReason || ''}
+                            onChange={(e) => setAppConfig(prev => ({ ...prev, noCompensationReason: e.target.value }))}
+                            rows={2}
+                          />
+                          {renderFieldIssues('ethics.no_compensation_reason')}
+                        </div>
+                      )}
+                      <div className="review-field">
                         <label>
                           <input
                             type="checkbox"
@@ -1136,7 +1199,7 @@ function App() {
                       onClick={handleGenerate}
                       isLoading={generateSSE.status === 'streaming' || generateSSE.status === 'connecting'}
                     >
-                      📝 書類を生成（マルチエージェントレビュー付き）
+                      📝 書類を生成（サブスク用レビュー・プロンプト付き）
                     </Button>
                   </div>
                 </div>
@@ -1153,11 +1216,11 @@ function App() {
                         <span>✅</span>
                       )}
                     </div>
-                    <h2>{currentStep === 2 ? 'マルチエージェントレビュー中...' : '書類生成完了！'}</h2>
+                    <h2>{currentStep === 2 ? '書類を生成中...' : '書類生成完了！'}</h2>
                     <p>
                       {currentStep === 2
-                        ? 'Agent A（書類生成）とAgent B（倫理審査シミュレート）が書類をチェックしています'
-                        : 'すべての書類が正常に生成されました'}
+                        ? '設定したLLM APIで書類を作成しています。完了後、ChatGPTサブスク用のレビュー・プロンプトを表示します。'
+                        : '書類一式と、ChatGPTサブスクで手動レビューするためのプロンプトを用意しました。'}
                     </p>
 
                     {/* SSE進捗表示 */}
@@ -1196,6 +1259,9 @@ function App() {
                             >
                               📥 ZIPファイルをダウンロード
                             </Button>
+                            {subscriptionReviewPrompt && (
+                              <SubscriptionReviewPrompt prompt={subscriptionReviewPrompt} />
+                            )}
                             <Button
                               variant="primary"
                               isLoading={reformatting}

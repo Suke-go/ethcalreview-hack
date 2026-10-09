@@ -13,6 +13,7 @@ from datetime import datetime
 
 from app.services.llm_client import LLMClient
 from app.logger import get_logger
+from app.services.ethics_policy import compensation_policy, withdrawal_policy
 
 logger = get_logger(__name__)
 
@@ -25,8 +26,10 @@ TERMINOLOGY_RULE = (
     "それ以外の呼称（健康状態を含意する旧来の語や、実験の語を含む対象側の旧来の呼称など）は一切使用しないこと。"
     "実験計画の用語も同様に、対象側の旧来語を含む計画名は使わず、"
     "『参加者内計画（参加者内要因）』『参加者間計画（参加者間要因）』のように『参加者』を用いて表記すること。"
-    "実験を実施・進行する担当者は「実験実施者」と表記し、「研究者」とは書かないこと"
-    "（ただし役職を指す「研究責任者」はそのまま用いてよい）。"
+    "実験を実施・進行する担当者は「実験実施者」と表記すること。"
+    "「実施責任者」は研究全体の責任を担う役割、「実施分担者」は申請書に登録された分担者の役割として区別し、"
+    "「実験実施者」と相互に置き換えたり、同一の役割として扱ったりしないこと。"
+    "「研究対象者（実験参加者）」「実験実施者」「実施責任者」「実施分担者」の役割名を一貫して使うこと。"
 )
 
 # アカデミックライティング基本ルール（実施計画書向け）
@@ -160,6 +163,8 @@ class LLMDocumentGenerator:
             "risks": form_data.get("risks", []),
             "risk_countermeasures": form_data.get("riskCountermeasures", []),
             "reward_amount": form_data.get("rewardAmount", form_data.get("reward_amount", 1230)),
+            "withdrawal_notice": form_data.get("withdrawalNotice", ""),
+            "compensation_text": form_data.get("compensationText", ""),
         }
 
         is_questionnaire = _is_questionnaire_study(context)
@@ -198,6 +203,16 @@ class LLMDocumentGenerator:
         logger.info("  [5] 手順・実施内容 生成中...")
         sections["procedures"] = await self._generate_procedures(context, is_questionnaire)
         self._save_intermediate(intermediate_file, sections, "procedures完了")
+
+        # LLM生成の揺れで参加中止とデータ提供同意の撤回が混同されないよう、
+        # 倫理的配慮は全書類共通の方針文から決定的に組み立てる。
+        _, default_withdrawal_notice = withdrawal_policy(90)
+        sections["ethics"] = "\n".join(
+            part for part in [
+                context["withdrawal_notice"] or default_withdrawal_notice,
+                context["compensation_text"] or compensation_policy(True),
+            ] if part
+        )
 
         # DOCXファイル生成
         output_path = self._build_implementation_plan_docx(
@@ -581,7 +596,7 @@ class LLMDocumentGenerator:
         method = str(context.get("methodology", "")).strip()
         return (
             "本実験に関する説明を書面で行った上で、以下の手順で実施する。"
-            "第一に、研究の目的・内容・倫理的配慮について説明し、参加の任意性といつでも中断・撤回できる"
+            "第一に、研究の目的・内容・倫理的配慮について説明し、参加の任意性と実験への参加をいつでも中止できる"
             "ことを伝えた上で同意を取得する（約10分）。第二に、使用機器の準備と動作確認を行う（約5分）。"
             f"第三に、{method or '設定した条件に基づく課題を提示し、参加者は提示内容に回答する'}"
             "（中心となる実験試行）。各試行の合間には適宜休憩を挟み、参加者はいつでも中断できる。"

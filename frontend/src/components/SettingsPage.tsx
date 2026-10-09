@@ -88,7 +88,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                         <div className="section-divider" />
 
-                        <h3>研究責任者</h3>
+                        <h3>実施責任者</h3>
                         <div className="form-grid">
                             <Input
                                 label="氏名"

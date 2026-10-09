@@ -124,7 +124,8 @@ def test_consent_form_fills_back_side_overview(generation_context: dict, output_
     assert "約60分" in text  # [所要時間]
     # ③ 個人情報保護：任意性の固定文と撤回期限
     assert "研究への参加は任意であり" in text
-    assert "同意書署名の日から90日後" in text
+    assert "同意書署名日から90日以内であれば撤回できます" in text
+    assert "既に仮名加工したうえで集計・公表したデータ" in text
     # テンプレに残っていた旧サンプル本文（前任者の管理方法説明）が消えていること
     assert "特定のPCのみを用います" not in text
 

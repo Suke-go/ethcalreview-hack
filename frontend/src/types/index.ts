@@ -1,7 +1,7 @@
 // frontend/src/types/index.ts
 // 型定義
 
-// 研究責任者情報 (Backend: InvestigatorSettings)
+// 実施責任者情報 (Backend: InvestigatorSettings)
 export interface Investigator {
     name: string;        // 氏名
     affiliation: string; // 所属

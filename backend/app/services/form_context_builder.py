@@ -6,6 +6,7 @@ from typing import Any
 
 from app.config import UserSettings
 from app.services.preset_manager import PresetBundle, get_preset_by_id
+from app.services.ethics_policy import compensation_policy, withdrawal_policy
 
 
 def _get_nested(data: dict[str, Any], key: str) -> Any:
@@ -107,9 +108,11 @@ DEFAULT_DATA_MANAGEMENT_METHOD = (
 )
 
 DEFAULT_DATA_DISPOSAL_METHOD = (
-    "研究対象者から実験に関するデータの破棄が申請された場合は、直ちに当該研究対象者のデータを破棄する。"
-    "また、研究成果発表から10年が経過した場合、データを保存している媒体を初期化し、"
-    "データの復元ができないように処分する。同意書等の紙媒体についてはシュレッダーにかけた上で破棄する。"
+    "データ提供の同意が撤回された場合は、削除可能な当該研究データを削除する。"
+    "ただし、既に仮名加工されたうえで集計・公表されたデータは、個別に特定して削除できない。"
+    "研究成果発表から10年が経過した後は、保存媒体を初期化した後、"
+    "データを復元できないよう媒体を物理的に破壊して処分する。"
+    "同意書等の紙媒体はシュレッダーで裁断して処分する。"
 )
 
 # --- 未入力項目を空欄で残さず「提案値」で補完するための既定文（要レビュー前提のドラフト） ---
@@ -139,10 +142,7 @@ DEFAULT_SAFETY_MEASURES = (
 )
 
 # 健康被害の補償についての既定文（国立大学法人総合損害保険＝国大協保険に加入している前提）。
-DEFAULT_COMPENSATION_TEXT = (
-    "本研究の参加に起因して健康被害が生じた場合には、国立大学法人総合損害保険（国大協保険）に"
-    "より対応する。"
-)
+DEFAULT_COMPENSATION_TEXT = compensation_policy(True)
 
 
 def _build_safety_measures(
@@ -175,12 +175,7 @@ def _build_safety_measures(
 
 def _build_compensation_text(has_compensation: bool, no_compensation_reason: str) -> str:
     """健康被害の補償に関する説明文を組み立てる。"""
-    if has_compensation:
-        return DEFAULT_COMPENSATION_TEXT
-    reason = str(no_compensation_reason or "").strip()
-    if reason:
-        return f"本研究では健康被害に対する補償は行わない（理由：{reason}）。"
-    return ""
+    return compensation_policy(has_compensation, no_compensation_reason)
 
 
 def _domain_head_from_submission(submission_preset: Any) -> tuple[str, str]:
@@ -234,6 +229,26 @@ def build_generation_context(
     budget_preset = get_preset_by_id(preset_bundle, "budget_presets", budget_preset_id) if budget_preset_id else None
     room_preset = get_preset_by_id(preset_bundle, "room_presets", room_preset_id) if room_preset_id else None
     default_domain, default_domain_head = _domain_head_from_submission(submission_preset)
+
+    app_config_data = form_data.get("app_config") if isinstance(form_data.get("app_config"), dict) else {}
+    raw_withdrawal_days = _pick(form_data, "withdrawalPeriodDays", "app_config.withdrawalPeriodDays", default=90)
+    if "withdrawalPeriodDays" in app_config_data and app_config_data["withdrawalPeriodDays"] is None:
+        raw_withdrawal_days = None
+    if raw_withdrawal_days == "unlimited":
+        raw_withdrawal_days = None
+    if raw_withdrawal_days in (None, ""):
+        withdrawal_days = None
+    else:
+        withdrawal_days = int(raw_withdrawal_days)
+    withdrawal_deadline_text, withdrawal_notice = withdrawal_policy(withdrawal_days)
+    has_compensation = _to_bool(
+        _pick(form_data, "hasCompensation", "app_config.hasCompensation", "safety.has_compensation", default=True),
+        True,
+    )
+    no_compensation_reason = _pick(
+        form_data, "noCompensationReason", "app_config.noCompensationReason", "safety.no_compensation_reason", default=""
+    )
+    compensation_text = compensation_policy(has_compensation, no_compensation_reason)
 
     principal_investigator = {
         "preset_id": investigator_preset_id or "",
@@ -462,6 +477,8 @@ def build_generation_context(
             "disclosure_to_proxy": _to_bool(_pick(form_data, "dataDisclosureToProxy", default=False)),
         },
         "safety": {
+            "has_compensation": has_compensation,
+            "no_compensation_reason": no_compensation_reason,
             "measures": _pick(
                 form_data,
                 "safetyMeasures",
@@ -473,31 +490,15 @@ def build_generation_context(
                     _to_bool(_pick(form_data, "invasiveness", "app_config.invasiveness", "ethics.invasiveness", default=False)),
                 ),
             ),
-            "compensation_text": _pick(
-                form_data,
-                "compensationText",
-                "app_config.compensationText",
-                "safety.compensation_text",
-                default=_build_compensation_text(
-                    _to_bool(
-                        _pick(
-                            form_data,
-                            "hasCompensation",
-                            "app_config.hasCompensation",
-                            "safety.has_compensation",
-                            default=True,
-                        ),
-                        True,
-                    ),
-                    _pick(form_data, "noCompensationReason", "app_config.noCompensationReason", "safety.no_compensation_reason", default=""),
-                ),
-            ),
+            "compensation_text": compensation_text,
         },
         "consent": {
             "target_age": _pick(form_data, "consentTargetAge", default="18歳以上"),
             "can_confirm_will": _to_bool(_pick(form_data, "consentCanConfirmWill", default=True), True),
             "method": _pick(form_data, "consentMethod", default="文書を添えて口頭にて説明する"),
-            "withdrawal_deadline_text": _pick(form_data, "consentWithdrawalDeadlineText", default="同意書署名の日から90日後"),
+            "withdrawal_period_days": withdrawal_days,
+            "withdrawal_deadline_text": withdrawal_deadline_text,
+            "withdrawal_notice": withdrawal_notice,
         },
         "publication": {
             "enabled": _to_bool(_pick(form_data, "publicationEnabled", default=True), True),

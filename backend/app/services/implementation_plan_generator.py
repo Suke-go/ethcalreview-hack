@@ -35,6 +35,7 @@ def build_implementation_plan_outline(is_questionnaire: bool = False) -> List[Di
             {"number": "3-1", "title": "アンケートの目的", "level": 2, "key": "experiment_objective"},
             {"number": "3-2", "title": "研究対象者", "level": 2, "key": "participant_info"},
             {"number": "3-3", "title": "実施内容", "level": 2, "key": "procedures"},
+            {"number": "4", "title": "倫理的配慮", "level": 1, "key": "ethics"},
         ]
     else:
         outline += [
@@ -43,6 +44,7 @@ def build_implementation_plan_outline(is_questionnaire: bool = False) -> List[Di
             {"number": "3-2", "title": "実験参加者", "level": 2, "key": "participant_info"},
             {"number": "3-3", "title": "実験装置・実験タスク", "level": 2, "key": "equipment_description"},
             {"number": "3-4", "title": "実験手順", "level": 2, "key": "procedures"},
+            {"number": "4", "title": "倫理的配慮", "level": 1, "key": "ethics"},
         ]
     return outline
 

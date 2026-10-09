@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from app.config import app_config, load_user_settings
 from app.services.editable_context import apply_editable_fields
 from app.services.ethics_policy import compensation_policy, withdrawal_policy
-from app.services.form_context_builder import build_generation_context
+from app.services.form_context_builder import DEFAULT_DATA_DISPOSAL_METHOD, build_generation_context
 from app.services.preset_manager import load_preset_bundle
 
 
@@ -30,6 +33,24 @@ def test_compensation_policy_has_one_shared_wording() -> None:
     assert compensation_policy(False, "研究の性質上、健康被害が想定されないため") == (
         "本研究では健康被害に対する補償は行いません（理由：研究の性質上、健康被害が想定されないため）。"
     )
+
+
+def test_bundled_room_and_matsumoto_presets_use_standard_lab_rooms() -> None:
+    presets_dir = Path(__file__).parents[1] / "presets"
+    room_presets = json.loads((presets_dir / "room_presets.json").read_text(encoding="utf-8"))
+    investigator_presets = json.loads((presets_dir / "investigator_presets.json").read_text(encoding="utf-8"))
+    standard_rooms = room_presets[0]["rooms"]
+    matsumoto = next(item for item in investigator_presets if item["id"] == "matsumoto_keigo")
+
+    assert [item["label"] for item in room_presets] == ["システム情報系 標準実験室"]
+    assert matsumoto["default_rooms"] == standard_rooms
+    assert matsumoto["default_storage_location"] == "研究室(3D402)にて管理されたノートパソコン"
+
+
+def test_default_disposal_method_requires_physical_destruction() -> None:
+    assert "保存媒体を初期化した後" in DEFAULT_DATA_DISPOSAL_METHOD
+    assert "媒体を物理的に破壊して処分する" in DEFAULT_DATA_DISPOSAL_METHOD
+    assert "既に仮名加工されたうえで集計・公表されたデータ" in DEFAULT_DATA_DISPOSAL_METHOD
 
 
 def test_generation_context_uses_withdrawal_and_compensation_settings() -> None:

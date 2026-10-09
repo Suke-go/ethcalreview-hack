@@ -108,7 +108,7 @@ const defaultAppConfig: ApplicationFormConfig = {
   storageLocation: '研究室(3M211)にて管理されたノートパソコン',  // lab_defaults.json から
   dataManager: '善甫 啓一',  // lab_defaults.json から
   managementMethod: 'ノートパソコンの使用を関係者のみとし、結果の解析はネットに接続されない状態で行う。また、暗号化およびパスワード保護を用いることによりデータを保護する。同意書等の紙媒体については研究室(3M211)の鍵付き棚に保管し、鍵は管理責任者が管理する。',
-  disposalMethod: 'データ提供の同意が撤回された場合、削除可能な当該研究データを削除する。ただし、既に仮名加工したうえで集計・公表したデータは、個別に特定して削除できない。また、研究成果発表から10年が経過した場合、データの保存しているSSDを初期化し、データの復元をできないようにして処分する。同意書等の紙媒体についてはシュレッダーにかけた上で破棄し、復元できないように処分する',
+  disposalMethod: 'データ提供の同意が撤回された場合は、削除可能な当該研究データを削除する。ただし、既に仮名加工されたうえで集計・公表されたデータは、個別に特定して削除できない。研究成果発表から10年が経過した後は、保存媒体を初期化した後、データを復元できないよう媒体を物理的に破壊して処分する。同意書等の紙媒体はシュレッダーで裁断して処分する。',
 };
 
 const DEFAULT_ZEMPO_LAB_CONDUCTOR_TEL = '029-853-6185';
@@ -257,7 +257,6 @@ function App() {
       ...prev,
       roomPresetId: preset.id,
       facilityName: preset.rooms.join(', '),
-      storageLocation: preset.rooms[0] ? `研究室(${preset.rooms[0]})` : prev.storageLocation,
     }));
   }, [presets]);
 

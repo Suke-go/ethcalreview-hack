@@ -298,7 +298,10 @@ class ApplicationFormGenerator:
             location=app_config.get("storageLocation") or data_mgmt_defaults.get("storage_location", "研究室"),
             manager=app_config.get("dataManager") or data_mgmt_defaults.get("manager", lab_info.get("pi_name", "")),
             method=app_config.get("managementMethod") or data_mgmt_defaults.get("management_method", "暗号化およびパスワード保護"),
-            disposal=app_config.get("disposalMethod") or data_mgmt_defaults.get("disposal_method", "SSD初期化、紙媒体はシュレッダー")
+            disposal=app_config.get("disposalMethod") or data_mgmt_defaults.get(
+                "disposal_method",
+                "データ提供の同意が撤回された場合は、削除可能な当該研究データを削除する。ただし、既に仮名加工されたうえで集計・公表されたデータは、個別に特定して削除できない。研究成果発表から10年が経過した後は、保存媒体を初期化した後、データを復元できないよう媒体を物理的に破壊して処分する。同意書等の紙媒体はシュレッダーで裁断して処分する。",
+            )
         )
         
         # データタイプをLLMで推定

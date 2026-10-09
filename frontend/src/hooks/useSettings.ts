@@ -27,9 +27,9 @@ const defaultSettings: Settings = {
     budget: {
         source: '運営費交付金',
         project_name: '',
-        reward_per_person: 800,
+        reward_per_person: 1230,
         reward_type: 'Amazonギフトカード（メールタイプ）',
-        hourly_rate: 1000,
+        hourly_rate: 1230,
     },
     subInvestigators: [],
     llm: {
@@ -46,7 +46,7 @@ const defaultSettings: Settings = {
     },
     ethicsCommittee: '筑波大学 システム情報系 研究倫理委員会',
     reward: {
-        baseAmountPer60Min: 1000,
+        baseAmountPer60Min: 1230,
         roundingUnit: 100,
         minimumWage: 1074,
         prefecture: '茨城県',

@@ -157,7 +157,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <Input
                                 label="60分あたり基本金額（円）"
                                 type="number"
-                                value={formData.reward?.baseAmountPer60Min || 1000}
+                                value={formData.reward?.baseAmountPer60Min || 1230}
                                 onChange={(e) => handleChange('reward.baseAmountPer60Min', parseInt(e.target.value))}
                             />
                             <Input
@@ -169,7 +169,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
 
                         <div className="reward-info">
-                            <p>💡 謝礼は「大学規定による」と記載され、60分1,000円を基準に100円単位で自動計算されます。</p>
+                            <p>💡 謝礼は「大学規定による」と記載され、2026年度の60分1,230円を基準に100円単位で自動計算されます。</p>
                             <table className="reward-example">
                                 <thead>
                                     <tr>
@@ -178,10 +178,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td>30分</td><td>¥500</td></tr>
-                                    <tr><td>45分</td><td>¥800</td></tr>
-                                    <tr><td>60分</td><td>¥1,000</td></tr>
-                                    <tr><td>90分</td><td>¥1,500</td></tr>
+                                    <tr><td>30分</td><td>¥700</td></tr>
+                                    <tr><td>45分</td><td>¥1,000</td></tr>
+                                    <tr><td>60分</td><td>¥1,300</td></tr>
+                                    <tr><td>90分</td><td>¥1,900</td></tr>
                                 </tbody>
                             </table>
                         </div>

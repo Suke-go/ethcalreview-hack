@@ -33,6 +33,8 @@ class InvestigatorPreset(BaseModel):
     email: str = ""
     tel: str = ""
     default_rooms: list[str] = Field(default_factory=list)
+    default_storage_location: str = ""
+    default_management_method: str = ""
     default_budget_ids: list[str] = Field(default_factory=list)
     default_submission_preset_id: str = ""
     enabled: bool = True
@@ -143,4 +145,3 @@ def get_preset_by_id(bundle: PresetBundle, kind: str, preset_id: str) -> BaseMod
         if item.id == preset_id and getattr(item, "enabled", True):
             return item
     return None
-

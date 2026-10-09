@@ -73,6 +73,8 @@ export interface InvestigatorPreset {
     email: string;
     tel: string;
     default_rooms: string[];
+    default_storage_location?: string;
+    default_management_method?: string;
     default_budget_ids: string[];
     default_submission_preset_id: string;
     enabled: boolean;
@@ -364,4 +366,3 @@ export interface SessionDetail {
     steps: SessionSteps;
     rebuttal: RebuttalInfo;
 }
-

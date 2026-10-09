@@ -36,9 +36,9 @@ class EthicsCommitteeSettings(BaseModel):
 class BudgetSettings(BaseModel):
     source: str = "運営費交付金"
     project_name: str = ""
-    reward_per_person: int = 800
+    reward_per_person: int = 1230
     reward_type: str = "Amazonギフトカード（Eメールタイプ）"
-    hourly_rate: int = 1000
+    hourly_rate: int = 1230
 
 
 class InsuranceSettings(BaseModel):

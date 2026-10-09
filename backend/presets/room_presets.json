@@ -9,5 +9,15 @@
     "enabled": true,
     "version": 1,
     "updated_at": "2026-05-02T00:00:00"
+  },
+  {
+    "id": "brlab_experiment_room",
+    "label": "松本研究室 実験室",
+    "rooms": [
+      "3F224"
+    ],
+    "enabled": true,
+    "version": 1,
+    "updated_at": "2026-09-24T00:00:00"
   }
 ]

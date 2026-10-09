@@ -21,6 +21,8 @@ import { useSettings } from './hooks/useSettings';
 import { useSSE } from './hooks/useSSE';
 import { setApiKey, getSession, downloadDocumentsZip, reformatDocuments, getPresets, API_BASE_URL } from './api/client';
 import { DocumentEditor } from './components/DocumentEditor';
+import { SubscriptionReviewPrompt } from './components/SubscriptionReviewPrompt';
+import { buildSubscriptionReviewPrompt } from './utils/subscriptionReviewPrompt';
 import type { AnalysisResult, FormData, SessionDetail, PresetBundle, ValidationIssue } from './types';
 
 
@@ -426,6 +428,25 @@ function App() {
     setSelectedSession(null);
   }, []);
 
+  const subscriptionReviewPrompt = analysisResult
+    ? buildSubscriptionReviewPrompt({
+      researchPlan: rawResearchInput,
+      analysis: analysisResult,
+      investigator: settings.principal_investigator ?? settings.principalInvestigator!,
+      presets,
+      investigatorPresetId: appConfig.principalInvestigatorPresetId,
+      facilityName: appConfig.facilityName,
+      subInvestigators: appConfig.subInvestigators,
+      withdrawalPeriodDays: appConfig.withdrawalPeriodDays,
+      hasCompensation: appConfig.hasCompensation,
+      noCompensationReason: appConfig.noCompensationReason,
+      storageLocation: appConfig.storageLocation,
+      dataManager: appConfig.dataManager,
+      managementMethod: appConfig.managementMethod,
+      disposalMethod: appConfig.disposalMethod,
+    })
+    : '';
+
   return (
     <div className="app">
       <Header
@@ -513,7 +534,7 @@ function App() {
                 <div className="review-section">
                   <div className="review-header">
                     <h2>🔍 AI解析結果の確認</h2>
-                    <p>以下の内容を確認・編集してください。「書類生成」をクリックすると、マルチエージェントによるレビューと書類生成が開始されます。</p>
+                    <p>以下の内容を確認・編集してください。書類生成後、ChatGPTサブスクで手動レビューするためのプロンプトを表示します。書類生成自体には設定したLLM APIを使用します。</p>
                   </div>
 
                   {generationIssues.length > 0 && (
@@ -1178,7 +1199,7 @@ function App() {
                       onClick={handleGenerate}
                       isLoading={generateSSE.status === 'streaming' || generateSSE.status === 'connecting'}
                     >
-                      📝 書類を生成（マルチエージェントレビュー付き）
+                      📝 書類を生成（サブスク用レビュー・プロンプト付き）
                     </Button>
                   </div>
                 </div>
@@ -1195,11 +1216,11 @@ function App() {
                         <span>✅</span>
                       )}
                     </div>
-                    <h2>{currentStep === 2 ? 'マルチエージェントレビュー中...' : '書類生成完了！'}</h2>
+                    <h2>{currentStep === 2 ? '書類を生成中...' : '書類生成完了！'}</h2>
                     <p>
                       {currentStep === 2
-                        ? 'Agent A（書類生成）とAgent B（倫理審査シミュレート）が書類をチェックしています'
-                        : 'すべての書類が正常に生成されました'}
+                        ? '設定したLLM APIで書類を作成しています。完了後、ChatGPTサブスク用のレビュー・プロンプトを表示します。'
+                        : '書類一式と、ChatGPTサブスクで手動レビューするためのプロンプトを用意しました。'}
                     </p>
 
                     {/* SSE進捗表示 */}
@@ -1238,6 +1259,9 @@ function App() {
                             >
                               📥 ZIPファイルをダウンロード
                             </Button>
+                            {subscriptionReviewPrompt && (
+                              <SubscriptionReviewPrompt prompt={subscriptionReviewPrompt} />
+                            )}
                             <Button
                               variant="primary"
                               isLoading={reformatting}

@@ -1,0 +1,31 @@
+.subscription-review-prompt {
+    width: min(100%, 900px);
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    background: var(--bg-secondary);
+    text-align: left;
+}
+
+.subscription-review-prompt h3 {
+    margin: 0 0 0.5rem;
+}
+
+.subscription-review-prompt p {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.subscription-review-prompt .input-wrapper {
+    margin-bottom: 1rem;
+}
+
+.subscription-review-prompt .textarea-field {
+    min-height: 24rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    white-space: pre;
+}

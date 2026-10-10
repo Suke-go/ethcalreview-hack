@@ -33,10 +33,15 @@ def get_llm_client() -> LLMClient:
     
     if provider == 'gemini':
         api_key = settings_data.get('gemini_api_key', '')
-    else:
+    elif provider == 'openai':
         api_key = settings_data.get('openai_api_key', '')
+    elif provider == 'anthropic':
+        api_key = settings_data.get('anthropic_api_key', '')
+    else:
+        raise ValueError(f'Unknown provider: {provider}')
     
     if not api_key:
         raise ValueError(f"API key not found for provider: {provider}")
     
-    return create_llm_client(provider=provider, api_key=api_key)
+    model = settings_data.get('anthropic_model') if provider == 'anthropic' else None
+    return create_llm_client(provider=provider, api_key=api_key, model=model)

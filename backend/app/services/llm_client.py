@@ -1,6 +1,6 @@
 """
 LLM Client Abstraction Layer
-Supports OpenAI and Gemini providers
+Supports OpenAI, Gemini, and Anthropic providers
 """
 import json
 from abc import ABC, abstractmethod
@@ -240,6 +240,50 @@ class GeminiClient(LLMClient):
             raise
 
 
+class AnthropicClient(LLMClient):
+    """Claude Console API client. Billing follows the API key's Console organization."""
+
+    def __init__(self, api_key: str, model: str = "claude-sonnet-5-5"):
+        if not api_key:
+            raise ValueError("Anthropic API key is required")
+        self.api_key = api_key
+        self.model_name = model
+
+    async def generate_content_async(
+        self, prompt: str, system_instruction: Optional[str] = None
+    ) -> str:
+        import httpx
+
+        payload = {
+            "model": self.model_name,
+            "max_tokens": 4096,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if system_instruction:
+            payload["system"] = system_instruction
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": self.api_key,
+                    "anthropic-version": "2023-06-01",
+                },
+                json=payload,
+            )
+            # In particular, do not retry a depleted credit balance automatically.
+            response.raise_for_status()
+            data = response.json()
+        if data.get("stop_reason") == "max_tokens":
+            raise ValueError("Claude response was truncated; increase max_tokens before use")
+        result = "".join(
+            block["text"] for block in data["content"] if block.get("type") == "text"
+        )
+        if not result:
+            raise ValueError("Claude returned no text")
+        return result
+
+
 def create_llm_client(
     provider: str, 
     api_key: str, 
@@ -249,7 +293,7 @@ def create_llm_client(
     ファクトリ関数：プロバイダーに応じたクライアントを生成
     
     Args:
-        provider: "openai" or "gemini"
+        provider: "openai", "gemini", or "anthropic"
         api_key: API key for the provider
         model: Optional model name override
     
@@ -262,5 +306,7 @@ def create_llm_client(
         return OpenAIClient(api_key=api_key, model=model or "gpt-5-mini")
     elif provider == "gemini":
         return GeminiClient(api_key=api_key, model=model or "gemini-3-flash")
+    elif provider == "anthropic":
+        return AnthropicClient(api_key=api_key, model=model or "claude-sonnet-5-5")
     else:
-        raise ValueError(f"Unknown provider: {provider}. Supported: openai, gemini")
+        raise ValueError(f"Unknown provider: {provider}. Supported: openai, gemini, anthropic")
